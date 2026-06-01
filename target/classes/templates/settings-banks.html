@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Paramétrage Banques')}"></head>
+<body>
+
+    <div th:replace="~{layout :: sidebar('settings-banks')}"></div>
+    <div th:replace="~{layout :: header('Paramétrage des Banques')}"></div>
+
+    <main class="main-content">
+        <div class="row justify-content-center">
+            <div class="col-md-11">
+                <div class="card card-custom">
+                    <div class="card-header bg-white fw-bold py-3 border-bottom">
+                        <h5 class="mb-0 text-primary d-flex align-items-center">
+                            <i class="fas fa-university me-3"></i>GESTION DES BANQUES ET INTERVENANTS
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        
+                        <!-- Section Intervenants ACE3i (Interne) -->
+                        <div class="row mb-5">
+                            <div class="col-12">
+                                <div class="card border-0 shadow-sm border-start border-primary border-4">
+                                    <div class="card-header bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
+                                        <span><i class="fas fa-user-shield me-2 text-primary"></i>INTERVENANTS ACE3i (EXPERTS INTERNES)</span>
+                                        <span class="badge rounded-pill bg-light text-primary border" th:text="${ace3iClient.interveners.size() + ' Experts'}">0</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="text-muted small mb-3">Configurez ici la liste des experts ACE3i qui pourront être sélectionnés dans les fiches de mission.</p>
+                                        <div class="d-flex flex-wrap align-items-center gap-2">
+                                            <div th:each="expert : ${ace3iClient.interveners}" class="intervener-tag expert-tag">
+                                                <i class="fas fa-check-circle text-success me-1 small"></i>
+                                                <span th:text="${expert.name}">Expert</span>
+                                                <a href="javascript:void(0)" 
+                                                   th:onclick="|confirmDelete('/settings/interveners/delete-get/${expert.id}', 'Supprimer cet expert ACE3i ?')|"
+                                                   class="tag-delete-btn">&times;</a>
+                                            </div>
+                                            
+                                            <form th:action="@{/settings/interveners/add}" method="post" class="quick-add-form">
+                                                <input type="hidden" name="clientId" th:value="${ace3iClient.id}" />
+                                                <div class="input-group input-group-sm">
+                                                    <input type="text" name="name" class="form-control border-0" placeholder="Ajouter un expert..." required />
+                                                    <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i></button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Ajouter un Client et ses Intervenants -->
+                            <div class="col-md-4 mb-4">
+                                <div class="card border-0 shadow-sm h-100 bg-light">
+                                    <div class="card-header bg-transparent border-0 fw-bold text-dark pt-3">NOUVELLE BANQUE</div>
+                                    <div class="card-body">
+                                        <form th:action="@{/settings/clients/add}" th:object="${newClient}" method="post">
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-bold text-muted">NOM DE LA BANQUE</label>
+                                                <input type="text" th:field="*{name}" class="form-control border-0 shadow-sm" placeholder="Ex: SUNU, CORIS BANK..." required />
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-bold text-muted">INTERVENANTS</label>
+                                                <textarea name="intervenerNames" class="form-control border-0 shadow-sm" rows="3" placeholder="Séparez les noms par une virgule (ex: Jean Luc, Alice...)"></textarea>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary w-100 shadow-sm mt-2">
+                                                <i class="fas fa-plus-circle me-2"></i>Créer la fiche banque
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Liste des Clients et Intervenants -->
+                            <div class="col-md-8 mb-4">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-header bg-transparent border-bottom fw-bold text-dark d-flex justify-content-between align-items-center py-3">
+                                        BANQUES CONFIGURÉES
+                                        <span class="badge rounded-pill bg-primary px-3" th:text="${clients.size() + ' Total'}">0</span>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover align-middle mb-0">
+                                                <thead class="bg-light">
+                                                    <tr>
+                                                        <th class="ps-4 border-0 py-3 text-muted small fw-bold">BANQUE</th>
+                                                        <th class="border-0 py-3 text-muted small fw-bold">INTERVENANTS & AJOUT RAPIDE</th>
+                                                        <th class="text-end pe-4 border-0 py-3 text-muted small fw-bold">ACTION</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr th:each="client : ${clients}">
+                                                        <td class="ps-4">
+                                                            <div class="fw-bold text-dark fs-6" th:text="${client.name}">Nom Banque</div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                                                <!-- Liste des badges -->
+                                                                <div th:each="intervener : ${client.interveners}" class="intervener-tag">
+                                                                    <span th:text="${intervener.name}">Nom</span>
+                                                                    <a href="javascript:void(0)" 
+                                                                       th:onclick="|confirmDelete('/settings/interveners/delete-get/${intervener.id}', 'Voulez-vous supprimer cet intervenant ?')|"
+                                                                       class="tag-delete-btn" style="text-decoration:none;">&times;</a>
+                                                                </div>
+                                                                
+                                                                <!-- Formulaire d'ajout rapide (stylisé) -->
+                                                                <form th:action="@{/settings/interveners/add}" method="post" class="quick-add-form">
+                                                                    <input type="hidden" name="clientId" th:value="${client.id}" />
+                                                                    <div class="input-group input-group-sm">
+                                                                        <input type="text" name="name" class="form-control form-control-xs border-0" placeholder="Ajouter un nom..." required />
+                                                                        <button type="submit" class="btn btn-primary btn-xs"><i class="fas fa-plus"></i></button>
+                                                                    </div>
+                                                                </form>
+                                                            </div>
+                                                        </td>
+                                                        <td class="text-end pe-4">
+                                                            <a href="javascript:void(0)" 
+                                                               th:onclick="|confirmDelete('/settings/clients/delete-get/${client.id}', 'Supprimer cette banque et tous ses intervenants ?')|"
+                                                               class="btn btn-link text-danger p-0" title="Supprimer">
+                                                                <i class="fas fa-trash-alt"></i>
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                    <tr th:if="${clients.empty}">
+                                                        <td colspan="3" class="text-center py-5 text-muted">
+                                                            <i class="fas fa-info-circle fs-4 mb-2 d-block opacity-25"></i>
+                                                            Aucune banque configurée.
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-top d-flex justify-content-start">
+                            <a th:href="@{/dashboard}" class="btn btn-outline-secondary btn-sm px-4">
+                                <i class="fas fa-arrow-left me-1"></i> Retour au tableau de bord
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div th:replace="~{layout :: scripts}"></div>
+    
+    <style>
+        /* Style des Intervenants (Tags) */
+        .intervener-tag {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 6px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            color: #334155;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .intervener-tag:hover { background: #e2e8f0; }
+        .tag-delete-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.2rem;
+            padding: 0;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+        .tag-delete-btn:hover { color: #ef4444; }
+
+        /* Formulaire d'ajout rapide */
+        .quick-add-form {
+            min-width: 220px;
+            max-width: 300px;
+        }
+        .quick-add-form .input-group {
+            background: #fff;
+            border: 1px dashed var(--primary-color);
+            border-radius: 8px;
+            overflow: hidden;
+            padding: 3px;
+            transition: all 0.2s;
+        }
+        .quick-add-form .input-group:focus-within {
+            border-style: solid;
+            box-shadow: 0 0 0 3px rgba(103, 190, 217, 0.15);
+        }
+        .quick-add-form input {
+            background: transparent;
+            font-size: 0.85rem;
+            height: 32px;
+            padding-left: 12px;
+        }
+        .quick-add-form button {
+            border-radius: 6px !important;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+    </style>
+</body>
+</html>

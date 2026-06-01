@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Génération de Rapport')}"></head>
+<body>
+
+    <div th:replace="~{layout :: sidebar('reports')}"></div>
+    <div th:replace="~{layout :: header('Bilans Périodiques')}"></div>
+
+    <main class="main-content">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card card-custom border-0 shadow-sm">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="mb-0 text-primary fw-bold">
+                            <i class="fas fa-file-invoice-dollar me-2"></i>GÉNÉRER UN RAPPORT D'ACTIVITÉ
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="text-muted mb-4">
+                            Sélectionnez un client et une période pour générer un document PDF consolidé récapitulant toutes les interventions effectuées.
+                        </p>
+
+                        <form th:action="@{/missions/report}" method="get" target="_blank">
+                            <div class="row g-4">
+                                <!-- Client -->
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small text-muted text-uppercase">1. Client (Banque)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="fas fa-building text-primary"></i></span>
+                                        <select name="clientName" class="form-select border-0 bg-light shadow-sm" required style="height: 50px;">
+                                            <option value="">-- Choisir une banque --</option>
+                                            <option th:each="c : ${clients}" th:value="${c.name}" th:text="${c.name}">Banque</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Dates -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small text-muted text-uppercase">2. Date de début</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="fas fa-calendar-alt text-primary"></i></span>
+                                        <input type="date" name="startDate" class="form-control border-0 bg-light shadow-sm" required style="height: 50px;">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small text-muted text-uppercase">3. Date de fin</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="fas fa-calendar-check text-primary"></i></span>
+                                        <input type="date" name="endDate" class="form-control border-0 bg-light shadow-sm" required style="height: 50px;">
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12 mt-5">
+                                    <div class="alert alert-info border-0 shadow-sm d-flex align-items-center" role="alert">
+                                        <i class="fas fa-info-circle fs-4 me-3"></i>
+                                        <div>
+                                            Le document généré inclura une synthèse automatique de l'activité, le détail chronologique des missions et des espaces de validation.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12 text-center mt-4">
+                                    <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill shadow">
+                                        <i class="fas fa-file-pdf me-2"></i> Générer le Rapport PDF
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div th:replace="~{layout :: scripts}"></div>
+</body>
+</html>

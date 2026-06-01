@@ -1,0 +1,87 @@
+📜 Prompt pour créer une application web de gestion de missions avec Spring Boot + Thymeleaf et Java 21
+Contexte :
+
+Je souhaite créer une application web de gestion des missions d'intervention pour une entreprise. L'application doit permettre de suivre les missions de terrain, d'afficher les informations relatives à chaque mission, de remplir un formulaire, d'enregistrer des missions et de générer des PDF pour chaque mission.
+
+Objectifs principaux :
+Gestion des missions :
+Création, modification et suppression des missions.
+Affichage d'une liste des missions existantes.
+Calcul automatique de la durée des missions (basé sur les dates de début et de fin).
+Génération automatique de fichiers PDF pour chaque mission après leur création ou mise à jour.
+Interface utilisateur avec Thymeleaf :
+Formulaire de saisie de mission (nom du client, intervenant, dates, type d’intervention, description, durée).
+Liste des missions avec un affichage de leurs détails.
+Un formulaire pour modifier les informations d'une mission.
+Fonctionnalités avancées :
+Création de PDF avec toutes les informations d'une mission, incluant la signature (optionnelle).
+Enregistrement des missions dans une base de données.
+Système d’authentification de base (si nécessaire) pour restreindre l'accès à certaines pages.
+Détails des fonctionnalités :
+Formulaire de mission (Page de création / modification) :
+Nom du client
+Intervenant
+Date de début
+Date de fin
+Type d'intervention
+Description
+Durée (calculée automatiquement selon les dates)
+Page de liste des missions :
+Afficher une liste de toutes les missions avec :
+Nom du client
+Intervenant
+Dates de début et fin
+Durée de la mission
+Actions possibles : modifier, supprimer.
+Génération de PDF :
+Créer un fichier PDF pour chaque mission (en utilisant iText ou une autre bibliothèque).
+Le PDF doit inclure toutes les informations de la mission (nom du client, dates, description, intervenant, durée).
+Option de signature électronique (si applicable).
+Base de données :
+Stockage des missions dans une base de données relationnelle (comme H2 pour une base en mémoire ou MySQL/PostgreSQL pour une base persistante).
+Utilisation de Spring Data JPA pour gérer les entités.
+Authentification et autorisations :
+Authentification de base pour administrateurs et techniciens (si nécessaire).
+Protection des pages sensibles (par exemple, modification/suppression des missions).
+Sécurisation des données :
+Utilisation de HTTPS pour sécuriser la communication entre le serveur et le client.
+Validation des formulaires pour éviter les erreurs de saisie.
+Technologies recommandées :
+Back-end :
+Spring Boot pour le framework backend.
+Spring Data JPA pour l’interaction avec la base de données.
+Thymeleaf pour la génération des vues HTML côté client.
+iText ou Flying Saucer pour générer des fichiers PDF.
+Base de données :
+H2 pour une base en mémoire pendant le développement (facile à configurer).
+MySQL ou PostgreSQL pour une solution plus robuste en production.
+Front-end :
+HTML, CSS et Thymeleaf pour l'affichage côté client.
+Bootstrap ou Tailwind CSS pour rendre l’interface moderne et responsive (facultatif).
+Sécurité (si nécessaire) :
+Spring Security pour gérer l'authentification et les rôles des utilisateurs (administrateur, technicien, etc.).
+Architecture générale du projet :
+Controllers : Gérer les requêtes HTTP, afficher les vues et traiter les formulaires.
+Models : Entités représentant les missions, avec des annotations JPA pour les stocker dans la base de données.
+Repositories : Interfaces qui permettent d’interagir avec la base de données.
+Vues Thymeleaf : HTML dynamique qui permet de générer les pages d’accueil, les formulaires et la liste des missions.
+Services (optionnel) : Pour la logique métier (ex : génération du PDF ou calcul des durées).
+Plan de développement :
+Initialisation du projet Spring Boot :
+Utiliser Spring Initializr
+ pour générer le squelette du projet avec les dépendances : Spring Web, Thymeleaf, Spring Data JPA, H2 (ou MySQL/PostgreSQL).
+Création des entités :
+Créer une entité Mission avec des attributs comme : nom du client, intervenant, dates, type d'intervention, etc.
+Création des repositories :
+Créer un repository pour l'entité Mission qui étend JpaRepository pour les opérations CRUD.
+Création des contrôleurs :
+Créer un contrôleur pour gérer l'affichage des missions, le formulaire de création/modification, et l'exportation en PDF.
+Création des vues Thymeleaf :
+Créer les pages index.html (pour afficher la liste des missions) et missionForm.html (pour saisir ou modifier une mission).
+Ajout de la génération PDF :
+Utiliser une bibliothèque comme iText pour générer le PDF de la mission après sa création ou sa mise à jour.
+Sécurisation de l’application (si nécessaire) :
+Mettre en place un système de connexion avec Spring Security si des restrictions d’accès sont nécessaires.
+Tests et déploiement :
+Tester les fonctionnalités de l'application.
+Déployer l’application sur un serveur (par exemple, Heroku ou un serveur dédié).

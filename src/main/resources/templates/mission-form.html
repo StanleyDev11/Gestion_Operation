@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Fiche de Mission')}"></head>
+<body>
+
+    <div th:replace="~{layout :: sidebar(${mission.id == null ? 'new-mission' : 'missions'})}"></div>
+    <div th:replace="~{layout :: header(${mission.id == null ? 'Nouvelle Mission d''Intervention' : 'Modification de Mission'})}"></div>
+
+    <main class="main-content">
+        <div class="card card-custom shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-primary">
+                        <i class="fas fa-edit me-2"></i>SAISIE DE LA FICHE DE PRESTATION
+                    </h5>
+                    <span class="badge bg-light text-primary border border-primary-subtle px-3 py-2" th:if="${mission.id != null}">
+                        ID: #<span th:text="${mission.id}">0</span>
+                    </span>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                <form th:action="@{/missions/save}" th:object="${mission}" method="post">
+                    <input type="hidden" th:field="*{id}" />
+                    <!-- Paramètres de recherche à conserver -->
+                    <input type="hidden" name="fPage" th:value="${fPage}" />
+                    <input type="hidden" name="fKeyword" th:value="${fKeyword}" />
+                    <input type="hidden" name="fStatus" th:value="${fStatus}" />
+                    
+                    <div class="section-title">INFORMATIONS GÉNÉRALES</div>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Nom du Projet</label>
+                            <input type="text" th:field="*{projectName}" class="form-control shadow-sm" th:classappend="${#fields.hasErrors('projectName')} ? 'is-invalid' : ''" placeholder="Saisir le nom du projet" />
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('projectName')}" th:errors="*{projectName}">Erreur</div>
+                        </div>
+                        
+                        <!-- Ligne des intervenants -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Banque (Client)</label>
+                            <div class="input-group shadow-sm">
+                                <span class="input-group-text bg-white"><i class="fas fa-building text-muted"></i></span>
+                                <select th:field="*{clientName}" id="clientSelect" class="form-select border-start-0" onchange="updateInterveners()" th:classappend="${#fields.hasErrors('clientName')} ? 'is-invalid' : ''">
+                                    <option value="">-- Choisir la banque --</option>
+                                    <option th:each="client : ${clients}" th:value="${client.name}" th:text="${client.name}">Banque</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Intervenant de la Banque</label>
+                            <div class="input-group shadow-sm">
+                                <span class="input-group-text bg-white"><i class="fas fa-user-tie text-muted"></i></span>
+                                <select th:field="*{clientIntervener}" id="intervenerSelect" class="form-select border-start-0">
+                                    <option value="">-- Sélectionner le contact --</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Intervenant ACE3i (Expert)</label>
+                            <div class="input-group shadow-sm">
+                                <span class="input-group-text bg-white"><i class="fas fa-user-shield text-muted"></i></span>
+                                <select th:field="*{intervener}" class="form-select border-start-0" th:classappend="${#fields.hasErrors('intervener')} ? 'is-invalid' : ''">
+                                    <option value="">-- Choisir l'expert --</option>
+                                    <option th:each="expert : ${ace3iExperts}" th:value="${expert.name}" th:text="${expert.name}">Expert</option>
+                                </select>
+                            </div>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('intervener')}" th:errors="*{intervener}">Erreur</div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Ordre de mission n°</label>
+                            <input type="text" th:field="*{orderNumber}" class="form-control shadow-sm" placeholder="OM-202X-XXX" />
+                        </div>
+
+                        <!-- Champs OpenProject -->
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold text-primary"><i class="fas fa-external-link-alt me-1"></i> Tâche OpenProject (N° et Lien)</label>
+                            <div class="input-group shadow-sm">
+                                <span class="input-group-text bg-white border-end-0 text-muted">#</span>
+                                <input type="text" th:field="*{taskNumber}" class="form-control border-start-0" placeholder="Ex: 1234" style="max-width: 120px;">
+                                <span class="input-group-text bg-white border-start-0 border-end-0 text-muted"><i class="fas fa-link"></i></span>
+                                <input type="url" th:field="*{taskLink}" class="form-control border-start-0" placeholder="https://openproject.ace3i.com/projects/...">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-title">PÉRIODE ET DURÉE</div>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Début d'Intervention</label>
+                            <input type="datetime-local" th:field="*{startDate}" id="startDate" class="form-control shadow-sm" th:classappend="${#fields.hasErrors('startDate')} ? 'is-invalid' : ''" onchange="updateDuration()" />
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('startDate')}" th:errors="*{startDate}">Erreur</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Fin d'Intervention</label>
+                            <input type="datetime-local" th:field="*{endDate}" id="endDate" class="form-control shadow-sm" th:classappend="${#fields.hasErrors('endDate')} ? 'is-invalid' : ''" onchange="updateDuration()" />
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('endDate')}" th:errors="*{endDate}">Erreur</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold text-muted">Durée calculée</label>
+                            <input type="text" id="durationDisplay" th:value="${mission.getCalculatedDuration()}" class="form-control bg-light" readonly />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold text-primary">Nb de jours à facturer</label>
+                            <input type="number" step="0.5" th:field="*{nbDaysToInvoice}" class="form-control border-primary-subtle shadow-sm" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark">Statut de l'intervention</label>
+                            <div class="d-flex gap-3">
+                                <div class="form-check border rounded px-4 py-2 bg-light">
+                                    <input class="form-check-input" type="radio" th:field="*{status}" value="Planifiée" id="st1" checked>
+                                    <label class="form-check-label fw-bold text-secondary" for="st1"><i class="fas fa-calendar-day me-1"></i> Planifiée</label>
+                                </div>
+                                <div class="form-check border rounded px-4 py-2 bg-light">
+                                    <input class="form-check-input" type="radio" th:field="*{status}" value="En cours" id="st2">
+                                    <label class="form-check-label fw-bold text-primary" for="st2"><i class="fas fa-spinner fa-spin me-1"></i> En cours</label>
+                                </div>
+                                <div class="form-check border rounded px-4 py-2 bg-light">
+                                    <input class="form-check-input" type="radio" th:field="*{status}" value="Terminée" id="st3">
+                                    <label class="form-check-label fw-bold text-success" for="st3"><i class="fas fa-check-circle me-1"></i> Terminée</label>
+                                </div>
+                                <div class="form-check border rounded px-4 py-2 bg-light">
+                                    <input class="form-check-input" type="radio" th:field="*{status}" value="Résolu" id="st4">
+                                    <label class="form-check-label fw-bold text-info" for="st4"><i class="fas fa-handshake me-1"></i> Résolu</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark">Type d'opération</label>
+                            <div class="d-flex gap-3">
+                                <div class="form-check border rounded px-4 py-2 bg-light">
+                                    <input class="form-check-input" type="radio" th:field="*{operationType}" value="En présentiel" id="op1" checked>
+                                    <label class="form-check-label fw-bold text-dark" for="op1"><i class="fas fa-user-friends me-1"></i> Présentiel</label>
+                                </div>
+                                <div class="form-check border rounded px-4 py-2 bg-light">
+                                    <input class="form-check-input" type="radio" th:field="*{operationType}" value="En ligne" id="op2">
+                                    <label class="form-check-label fw-bold text-dark" for="op2"><i class="fas fa-globe me-1"></i> En ligne</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div id="dateError" class="alert alert-danger d-none py-2 mb-0 border-0 shadow-sm">
+                                <i class="fas fa-exclamation-triangle me-2"></i>La date de fin ne peut pas être antérieure à la date de début.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-5">
+                        <div class="col-md-4">
+                            <div class="section-title">PROFIL INTERVENANT</div>
+                            <div class="bg-light p-3 rounded-3 border">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" th:field="*{profileChefProjet}" id="chef">
+                                    <label class="form-check-label fw-medium" for="chef">Chef de projet</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" th:field="*{profileConsultant}" id="consultant">
+                                    <label class="form-check-label fw-medium" for="consultant">Consultant</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="section-title">TYPE D'INTERVENTION</div>
+                            <div class="bg-light p-3 rounded-3 border">
+                                <div class="row g-2">
+                                    <div class="col-lg-3 col-md-6">
+                                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox" th:field="*{typeAnalyse}" id="t1"><label class="form-check-label small fw-medium" for="t1">Analyse</label></div>
+                                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox" th:field="*{typeAssistance}" id="t2"><label class="form-check-label small fw-medium" for="t2">Assistance</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" th:field="*{typeCorrectif}" id="t9"><label class="form-check-label small fw-medium" for="t9">Correctif</label></div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-6">
+                                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox" th:field="*{typeFormation}" id="t3"><label class="form-check-label small fw-medium" for="t3">Formation</label></div>
+                                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox" th:field="*{typeInstallation}" id="t4"><label class="form-check-label small fw-medium" for="t4">Installation</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" th:field="*{typeIncident}" id="t10"><label class="form-check-label small fw-medium" for="t10">Incident</label></div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-6">
+                                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox" th:field="*{typeMaintenance}" id="t5"><label class="form-check-label small fw-medium" for="t5">Maintenance</label></div>
+                                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox" th:field="*{typeMiseEnProduction}" id="t6"><label class="form-check-label small fw-medium" for="t6">Mise en prod.</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" th:field="*{typeSupport}" id="t11"><label class="form-check-label small fw-medium" for="t11">Support</label></div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-6">
+                                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox" th:field="*{typeProgrammation}" id="t7"><label class="form-check-label small fw-medium" for="t7">Programmation</label></div>
+                                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox" th:field="*{typeSuiviProjet}" id="t8"><label class="form-check-label small fw-medium" for="t8">Suivi projet</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" th:field="*{typeEvolution}" id="t12"><label class="form-check-label small fw-medium" for="t12">Évolution</label></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-title">ANALYSE DU PROBLÈME (SI APPLICABLE)</div>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Service Concerné</label>
+                            <input type="text" th:field="*{serviceConcerne}" class="form-control shadow-sm" placeholder="Ex: Service Informatique, Comptabilité, etc." />
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Description du problème</label>
+                            <textarea th:field="*{problemDescription}" class="form-control shadow-sm" rows="3" placeholder="Décrivez le problème rencontré..."></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Cause (Racine)</label>
+                            <textarea th:field="*{rootCause}" class="form-control shadow-sm" rows="3" placeholder="Origine du problème..."></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Solution (Procédure)</label>
+                            <textarea th:field="*{solutionProcedure}" class="form-control shadow-sm" rows="3" placeholder="Procédure suivie pour la résolution..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="section-title">TRAVAUX RÉALISÉS DURANT LA MISSION</div>
+                    <div class="mb-5">
+                        <textarea th:field="*{description}" class="form-control shadow-sm" rows="6" placeholder="Décrivez de manière détaillée les tâches accomplies..."></textarea>
+                    </div>
+
+                    <div class="row g-4 mb-5">
+                        <div class="col-md-6">
+                            <div class="section-title">VALIdATION CLIENT</div>
+                            <div class="card bg-light border-0 shadow-sm">
+                                <div class="card-body">
+                                    <label class="form-label fw-semibold small text-muted text-uppercase mb-2">Observations éventuelles</label>
+                                    <textarea th:field="*{clientObservations}" class="form-control mb-3 shadow-sm" rows="3" placeholder="Notes du client..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="section-title">VALIdATION INTERVENANT</div>
+                            <div class="card bg-light border-0 shadow-sm">
+                                <div class="card-body">
+                                    <label class="form-label fw-semibold small text-muted text-uppercase mb-2">Observations internes</label>
+                                    <textarea th:field="*{intervenerObservations}" class="form-control mb-3 shadow-sm" rows="3" placeholder="Notes de l'intervenant..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center border-top pt-4">
+                        <a th:href="@{/missions(page=${fPage}, keyword=${fKeyword}, status=${fStatus})}" class="btn btn-outline-secondary px-4 shadow-sm">
+                            <i class="fas fa-arrow-left me-2"></i>Retour à la liste
+                        </a>
+                        <button type="submit" class="btn btn-success btn-lg px-5 shadow">
+                            <i class="fas fa-check-circle me-2"></i>Enregistrer la Mission
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <div th:replace="~{layout :: scripts}"></div>
+    <script th:inline="javascript">
+        // Données des clients passées par le contrôleur
+        const clients = /*[[${clients}]]*/ [];
+        const currentClientIntervener = /*[[${mission.clientIntervener}]]*/ '';
+
+        function updateInterveners() {
+            const clientSelect = document.getElementById('clientSelect');
+            const intervenerSelect = document.getElementById('intervenerSelect');
+            const selectedClientName = clientSelect.value;
+            
+            // Vider la liste actuelle
+            intervenerSelect.innerHTML = '<option value="">-- Sélectionner le contact --</option>';
+            
+            if (!selectedClientName) return;
+
+            // Trouver le client sélectionné dans les données
+            const selectedClient = clients.find(c => c.name === selectedClientName);
+            
+            if (selectedClient && selectedClient.interveners) {
+                selectedClient.interveners.forEach(intervener => {
+                    const option = document.createElement('option');
+                    option.value = intervener.name;
+                    option.text = intervener.name;
+                    // Vérifier si c'est l'intervenant déjà enregistré
+                    if (intervener.name === currentClientIntervener) {
+                        option.selected = true;
+                    }
+                    intervenerSelect.appendChild(option);
+                });
+            }
+        }
+
+        function updateDuration() {
+            const startStr = document.getElementById('startDate').value;
+            const endStr = document.getElementById('endDate').value;
+            const display = document.getElementById('durationDisplay');
+            const errorDiv = document.getElementById('dateError');
+
+            if (startStr && endStr) {
+                const start = new Date(startStr);
+                const end = new Date(endStr);
+
+                if (end < start) {
+                    errorDiv.classList.remove('d-none');
+                    display.value = "Erreur";
+                    return false;
+                } else {
+                    errorDiv.classList.add('d-none');
+                    const diffMs = end - start;
+                    const diffMins = Math.floor(diffMs / 60000);
+                    const days = Math.floor(diffMins / (24 * 60));
+                    const hours = Math.floor((diffMins % (24 * 60)) / 60);
+                    const mins = diffMins % 60;
+
+                    let res = "";
+                    if (days > 0) res += days + "j ";
+                    if (hours > 0) res += hours + "h ";
+                    if (mins > 0) res += mins + "min";
+                    display.value = res.trim() || "0 min";
+                    return true;
+                }
+            }
+            return true;
+        }
+
+        // Initialisation unique au chargement
+        window.addEventListener('load', () => {
+            updateInterveners(); // Charger les intervenants si un client est déjà sélectionné (Edit mode)
+            
+            const form = document.querySelector('form');
+            if(form) {
+                form.addEventListener('submit', function(e) {
+                    if (!updateDuration()) {
+                        e.preventDefault();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Santé du Système')}"></head>
+<body>
+    <div th:replace="~{layout :: sidebar('health')}"></div>
+    <div th:replace="~{layout :: header('État de Santé du Serveur')}"></div>
+
+    <main class="main-content">
+        <div class="row g-4">
+            <!-- RAM Usage Card -->
+            <div class="col-md-4">
+                <div class="card card-custom p-4 text-center">
+                    <h6 class="text-muted mb-3">Utilisation RAM</h6>
+                    <div class="display-5 fw-bold text-primary mb-2" id="ramPercentText">0%</div>
+                    <div class="progress mb-2" style="height: 10px;">
+                        <div id="ramProgressBar" class="progress-bar bg-primary" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="small text-muted" id="ramDetails">0 MB / 0 MB</div>
+                </div>
+            </div>
+
+            <!-- CPU Usage Card -->
+            <div class="col-md-4">
+                <div class="card card-custom p-4 text-center">
+                    <h6 class="text-muted mb-3">Charge CPU</h6>
+                    <div class="display-5 fw-bold text-secondary mb-2" id="cpuLoadText">0%</div>
+                    <div class="progress mb-2" style="height: 10px;">
+                        <div id="cpuProgressBar" class="progress-bar bg-secondary" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="small text-muted">Système en temps réel</div>
+                </div>
+            </div>
+
+            <!-- Storage Usage Card -->
+            <div class="col-md-4">
+                <div class="card card-custom p-4 text-center">
+                    <h6 class="text-muted mb-3">Stockage Disque</h6>
+                    <div class="display-5 fw-bold text-success mb-2" id="diskPercentText">0%</div>
+                    <div class="progress mb-2" style="height: 10px;">
+                        <div id="diskProgressBar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="small text-muted" id="diskDetails">0 GB / 0 GB</div>
+                </div>
+            </div>
+
+            <!-- Graphs Section -->
+            <div class="col-lg-8">
+                <div class="card card-custom p-4">
+                    <h6 class="fw-bold mb-4">Suivi de Performance (RAM & CPU)</h6>
+                    <div style="height: 300px; position: relative;">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Uptime and More Info -->
+            <div class="col-lg-4">
+                <div class="card card-custom p-4 mb-4">
+                    <h6 class="fw-bold mb-3">Informations Système</h6>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Temps de fonctionnement (Uptime)</span>
+                        <span class="fw-bold small" id="uptimeText">0d 0h 0m 0s</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Statut Global</span>
+                        <span class="badge bg-success">OPÉRATIONNEL</span>
+                    </div>
+                </div>
+                
+                <div class="card card-custom p-4 bg-light border-0">
+                    <p class="small text-muted mb-0">Les données sont rafraîchies automatiquement toutes les 3 secondes pour un suivi précis de l'utilisation des ressources.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div th:replace="~{layout :: scripts}"></div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        const MAX_DATA_POINTS = 20;
+        let chartLabels = Array(MAX_DATA_POINTS).fill('');
+        let ramData = Array(MAX_DATA_POINTS).fill(0);
+        let cpuData = Array(MAX_DATA_POINTS).fill(0);
+
+        const performanceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartLabels,
+                datasets: [
+                    {
+                        label: 'Utilisation RAM (%)',
+                        borderColor: '#67bed9',
+                        backgroundColor: 'rgba(103, 190, 217, 0.1)',
+                        data: ramData,
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Charge CPU (%)',
+                        borderColor: '#ee7725',
+                        backgroundColor: 'rgba(238, 119, 37, 0.1)',
+                        data: cpuData,
+                        fill: true,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    },
+                    x: {
+                        display: false
+                    }
+                },
+                elements: {
+                    point: {
+                        radius: 0
+                    }
+                }
+            }
+        });
+
+        function updateStats() {
+            fetch('/admin/health/stats')
+                .then(response => response.json())
+                .then(data => {
+                    // Update Text & Progress Bars
+                    document.getElementById('ramPercentText').innerText = Math.round(data.ramPercent) + '%';
+                    document.getElementById('ramProgressBar').style.width = data.ramPercent + '%';
+                    document.getElementById('ramDetails').innerText = data.ramUsed + ' MB / ' + data.ramTotal + ' MB';
+
+                    document.getElementById('cpuLoadText').innerText = data.cpuLoad + '%';
+                    document.getElementById('cpuProgressBar').style.width = data.cpuLoad + '%';
+
+                    document.getElementById('diskPercentText').innerText = Math.round(data.diskPercent) + '%';
+                    document.getElementById('diskProgressBar').style.width = data.diskPercent + '%';
+                    document.getElementById('diskDetails').innerText = data.diskUsed + ' GB / ' + data.diskTotal + ' GB';
+
+                    document.getElementById('uptimeText').innerText = data.uptime;
+
+                    // Update Chart
+                    ramData.shift();
+                    ramData.push(data.ramPercent);
+                    cpuData.shift();
+                    cpuData.push(parseFloat(data.cpuLoad));
+                    performanceChart.update();
+                })
+                .catch(error => console.error('Erreur lors du rafraîchissement des stats:', error));
+        }
+
+        setInterval(updateStats, 3000);
+        updateStats(); // Initial call
+    </script>
+</body>
+</html>

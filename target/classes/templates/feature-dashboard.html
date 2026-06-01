@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Tableau de Bord Expert')}"></head>
+<style>
+    :root {
+        --primary-color: #4e73df;
+        --secondary-color: #858796;
+        --success-color: #1cc88a;
+        --info-color: #36b9cc;
+        --warning-color: #f6c23e;
+        --danger-color: #e74a3b;
+    }
+
+    .kpi-card { border-left: 4px solid; transition: transform 0.2s; cursor: default; }
+    .kpi-card:hover { transform: translateY(-5px); }
+    .kpi-primary { border-left-color: var(--primary-color); }
+    .kpi-success { border-left-color: var(--success-color); }
+    .kpi-info { border-left-color: var(--info-color); }
+    .kpi-warning { border-left-color: var(--warning-color); }
+
+    .card-title-sm { font-size: 0.7rem; font-weight: bold; color: var(--secondary-color); text-transform: uppercase; margin-bottom: 0.5rem; }
+    .kpi-value { font-size: 1.5rem; font-weight: bold; color: #5a5c69; }
+    .kpi-icon { font-size: 2rem; color: #dddfeb; }
+
+    .nav-tabs .nav-link { color: var(--secondary-color); font-weight: 600; border: none; border-bottom: 3px solid transparent; padding: 1rem 1.5rem; }
+    .nav-tabs .nav-link.active { color: var(--primary-color); background: transparent; border-bottom: 3px solid var(--primary-color); }
+    .nav-tabs .nav-link i { margin-right: 8px; }
+
+    .heatmap-table th { vertical-align: middle; }
+    .feature-header-text {
+        min-width: 120px;
+        max-width: 120px;
+        min-height: 58px;
+        padding: 8px 6px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #4e73df;
+        line-height: 1.2;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        text-align: center;
+    }
+    .heatmap-cell { width: 40px; height: 40px; vertical-align: middle !important; text-align: center; }
+    .client-name-col { position: sticky; left: 0; z-index: 10; background: #fff !important; font-weight: bold; min-width: 180px; border-right: 2px solid #e3e6f0 !important; }
+    
+    .status-dot { font-size: 1.2rem; }
+    .progress { border-radius: 10px; background-color: #eaecf4; }
+</style>
+<body>
+
+    <div th:replace="~{layout :: sidebar('feature-tracking-dashboard')}"></div>
+    <div th:replace="~{layout :: header('Pilotage des Fonctionnalités')}"></div>
+
+    <main class="main-content">
+        <!-- KPI Row -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card kpi-card kpi-primary shadow-sm h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="card-title-sm">Version Master</div>
+                                <div class="kpi-value" th:text="${globalKPIs.masterVersion}">v1.0.0</div>
+                            </div>
+                            <div class="col-auto"><i class="fas fa-code-branch kpi-icon"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card kpi-card kpi-success shadow-sm h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="card-title-sm">Taux d'Adoption Global</div>
+                                <div class="d-flex align-items-center">
+                                    <div class="kpi-value me-3" th:text="${globalKPIs.globalAdoptionRate} + '%'">0%</div>
+                                    <div class="progress flex-grow-1" style="height: 8px;">
+                                        <div class="progress-bar bg-success" role="progressbar" th:style="'width: ' + ${globalKPIs.globalAdoptionRate} + '%'"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-auto"><i class="fas fa-tasks kpi-icon"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card kpi-card kpi-info shadow-sm h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="card-title-sm">Clients à Jour</div>
+                                <div class="kpi-value" th:text="${globalKPIs.upToDateClients} + ' / ' + ${globalKPIs.totalClients}">0 / 0</div>
+                            </div>
+                            <div class="col-auto"><i class="fas fa-user-check kpi-icon"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card kpi-card kpi-warning shadow-sm h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="card-title-sm">Total Features</div>
+                                <div class="kpi-value" th:text="${#lists.size(allFeatures)}">0</div>
+                            </div>
+                            <div class="col-auto"><i class="fas fa-layer-group kpi-icon"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab System -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-0 pt-3">
+                <ul class="nav nav-tabs card-header-tabs" id="dashboardTabs" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                            <i class="fas fa-th-large"></i> Vue d'ensemble
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" id="matrix-tab" data-bs-toggle="tab" data-bs-target="#matrix" type="button" role="tab">
+                            <i class="fas fa-table"></i> Matrice de Couverture
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="dashboardTabsContent">
+                    
+                    <!-- Tab 1: Overview -->
+                    <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                        
+                        <!-- Ligne Analytique Majeure -->
+                        <div class="row mt-3 mb-4">
+                            <div class="col-lg-8">
+                                <div class="card border-0 shadow-sm bg-white h-100">
+                                    <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                                        <h6 class="m-0 fw-bold text-primary"><i class="fas fa-chart-line me-2"></i>Tendance d'Adoption des Versions</h6>
+                                        <span class="badge bg-light text-muted border fw-normal">Vitesse de mise à jour</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div style="height: 300px;"><canvas id="adoptionTrendChart"></canvas></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="card border-0 shadow-sm bg-white h-100">
+                                    <div class="card-header bg-white py-3 border-0">
+                                        <h6 class="m-0 fw-bold text-primary"><i class="fas fa-bullseye me-2"></i>Maturité Fonctionnelle (Top 5)</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div style="height: 300px;"><canvas id="maturityRadarChart"></canvas></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <h6 class="font-weight-bold text-dark mb-4">Statut de Conformité des Clients</h6>
+                                <div th:if="${#maps.isEmpty(allClientMissingAndNewFeatures)}" class="alert alert-light border">
+                                    Aucune donnée de déploiement disponible.
+                                </div>
+                                <div th:each="statEntry : ${allClientMissingAndNewFeatures}" class="mb-4 p-3 border rounded shadow-xs bg-white">
+                                    <!-- On récupère le nom du client depuis la liste allClients en cherchant par ID -->
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div>
+                                            <span class="h6 font-weight-bold mb-0" 
+                                                  th:each="c : ${allClients}" th:if="${c.id.toString() == statEntry.key}" th:text="${c.name}">Client</span>
+                                            
+                                            <span class="badge bg-light text-primary border ms-2"
+                                                  th:if="${currentVersionByClient[statEntry.key] != null}"
+                                                  th:text="${currentVersionByClient[statEntry.key]}">v1.0.0</span>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="fw-bold text-primary" th:text="${clientComplianceScores[statEntry.key]} + '%'">0%</span>
+                                            <a class="btn btn-outline-secondary btn-sm"
+                                               th:href="@{/feature-tracking/dashboard/print(clientId=${statEntry.key})}">
+                                                <i class="fas fa-print me-1"></i> Imprimer
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="progress mb-3" style="height: 12px;">
+                                        <div class="progress-bar shadow-none" role="progressbar" 
+                                             th:style="'width: ' + ${clientComplianceScores[statEntry.key]} + '%'"
+                                             th:classappend="${clientComplianceScores[statEntry.key] < 50 ? 'bg-danger' : (clientComplianceScores[statEntry.key] < 80 ? 'bg-warning' : 'bg-success')}"></div>
+                                    </div>
+                                    <div class="d-flex gap-4">
+                                        <div class="text-xs"><i class="fas fa-minus-circle text-danger"></i> <span th:text="${#lists.size(statEntry.value.missing)}">0</span> manquantes</div>
+                                        <div class="text-xs"><i class="fas fa-plus-circle text-success"></i> <span th:text="${#lists.size(statEntry.value.new)}">0</span> spécifiques</div>
+                                        <a href="javascript:void(0)" class="text-xs text-decoration-none ms-auto" data-bs-toggle="collapse" th:attr="data-bs-target='#details' + ${statEntry.key},aria-controls='details' + ${statEntry.key}" aria-expanded="false">
+                                            Voir le détail <i class="fas fa-chevron-down ms-1"></i>
+                                        </a>
+                                    </div>
+                                    <div th:id="'details' + ${statEntry.key}" class="collapse mt-3 border-top pt-3">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p class="text-xs font-weight-bold text-danger uppercase mb-2">Fonctionnalités Manquantes</p>
+                                                <ul class="list-unstyled">
+                                                    <li th:each="f : ${statEntry.value.missing}" class="text-xs text-muted mb-1"><i class="fas fa-angle-right me-1"></i> <span th:text="${f}">F</span></li>
+                                                    <li th:if="${#lists.isEmpty(statEntry.value.missing)}" class="text-xs text-muted">Parfaitement à jour.</li>
+                                                </ul>
+                                            </div>
+                                            <div class="col-md-6 border-start">
+                                                <p class="text-xs font-weight-bold text-success uppercase mb-2">Spécificités Client</p>
+                                                <ul class="list-unstyled">
+                                                    <li th:each="f : ${statEntry.value.new}" class="text-xs text-muted mb-1"><i class="fas fa-angle-right me-1"></i> <span th:text="${f}">F</span></li>
+                                                    <li th:if="${#lists.isEmpty(statEntry.value.new)}" class="text-xs text-muted">Aucune fonctionnalité personnalisée.</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="p-3 bg-light rounded shadow-xs mb-4">
+                                    <h6 class="text-xs font-weight-bold text-primary uppercase mb-3">Répartition des Versions</h6>
+                                    <div style="height: 250px;"><canvas id="versionDistributionChart"></canvas></div>
+                                </div>
+                                <div class="p-3 bg-light rounded shadow-xs">
+                                    <h6 class="text-xs font-weight-bold text-primary uppercase mb-3">Adoption Features / Client</h6>
+                                    <div style="height: 250px;"><canvas id="clientAdoptionChart"></canvas></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-lg-6 mb-4">
+                                <div class="p-3 bg-light rounded shadow-xs h-100">
+                                    <h6 class="text-xs font-weight-bold text-primary uppercase mb-3">Top Fonctionnalités Manquantes</h6>
+                                    <div style="height: 260px;"><canvas id="topMissingFeaturesChart"></canvas></div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 mb-4">
+                                <div class="p-3 bg-light rounded shadow-xs h-100">
+                                    <h6 class="text-xs font-weight-bold text-primary uppercase mb-3">Ancienneté des Versions Client</h6>
+                                    <div style="height: 260px;"><canvas id="versionAgeBucketsChart"></canvas></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-light rounded shadow-xs mt-2">
+                            <h6 class="text-xs font-weight-bold text-primary uppercase mb-3">Top 10 Clients en Retard</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead>
+                                    <tr>
+                                        <th>Client</th>
+                                        <th>Version</th>
+                                        <th class="text-end">Fonctions manquantes</th>
+                                        <th class="text-end">Ancienneté (jours)</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr th:each="row : ${mostOutdatedClientsData.rows}">
+                                        <td th:text="${row.clientName}">Client</td>
+                                        <td th:text="${row.version}">v1.0.0</td>
+                                        <td class="text-end fw-bold text-danger" th:text="${row.missingCount}">0</td>
+                                        <td class="text-end" th:text="${row.ageDays}">0</td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(mostOutdatedClientsData.rows)}">
+                                        <td colspan="4" class="text-center text-muted">Aucune donnée disponible.</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                        <div class="p-3 bg-light rounded shadow-xs mt-4">
+                            <h6 class="text-xs font-weight-bold text-primary uppercase mb-3">Récapitulatif des Versions & Branches</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle mb-0 bg-white">
+                                    <thead>
+                                    <tr>
+                                        <th>Version</th>
+                                        <th>Projet / Image</th>
+                                        <th>Branche Git</th>
+                                        <th>Date Release</th>
+                                        <th class="text-center">Maîtresse</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr th:each="v : ${allApplicationVersions}">
+                                        <td><span class="badge bg-primary" th:text="${v.versionNumber}">v1.0</span></td>
+                                        <td th:text="${v.projectName != null ? v.projectName : '-'}">Projet</td>
+                                        <td>
+                                            <code class="text-info fw-bold" th:text="${v.branchName != null ? v.branchName : '-'}">branch</code>
+                                        </td>
+                                        <td th:text="${v.releaseDate}">2026-01-01</td>
+                                        <td class="text-center">
+                                            <i th:if="${v.isLatestMaster}" class="fas fa-star text-warning"></i>
+                                            <span th:unless="${v.isLatestMaster}" class="text-muted small">-</span>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 2: Matrix -->
+                    <div class="tab-pane fade" id="matrix" role="tabpanel">
+                        <div class="mt-3">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h6 class="font-weight-bold text-dark mb-0">Matrice de Déploiement Croisée</h6>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input" type="checkbox" id="matrixOnlyLowCoverage">
+                                        <label class="form-check-label small" for="matrixOnlyLowCoverage">Clients &lt; 80%</label>
+                                    </div>
+                                    <div class="btn-group btn-group-sm">
+                                        <span class="btn btn-outline-success active" disabled><i class="fas fa-check-circle"></i> Présent</span>
+                                        <span class="btn btn-outline-danger active" disabled style="opacity: 0.3;"><i class="fas fa-circle"></i> Absent</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div th:if="${#lists.isEmpty(allFeatures)}" class="alert alert-info">
+                                Aucune fonctionnalité enregistrée pour construire la matrice.
+                            </div>
+                            
+                            <div th:unless="${#lists.isEmpty(allFeatures)}" class="table-responsive border rounded" style="max-height: 600px;">
+                                <table class="table table-sm table-hover mb-0 heatmap-table">
+                                    <thead class="bg-light sticky-top" style="z-index: 20;">
+                                        <tr>
+                                            <th class="client-name-col">Client / Fonctionnalité</th>
+                                            <th th:each="feature : ${allFeatures}" class="text-center p-0">
+                                                <div class="feature-header-text" th:title="${feature.name}" th:text="${feature.name}">Feature Name</div>
+                                            </th>
+                                            <th class="text-end pe-3" style="min-width: 130px;">Couverture</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="client : ${allClients}" th:attr="data-coverage=${clientComplianceScores[client.id.toString()]}">
+                                            <td class="client-name-col" th:text="${client.name}">Client</td>
+                                            <td th:each="feature : ${allFeatures}" class="heatmap-cell border-start">
+                                                <span th:if="${clientFeatureMap[client.id.toString()] != null and #sets.contains(clientFeatureMap[client.id.toString()], feature.id)}" 
+                                                      class="text-success status-dot"><i class="fas fa-check-circle"></i></span>
+                                                <span th:unless="${clientFeatureMap[client.id.toString()] != null and #sets.contains(clientFeatureMap[client.id.toString()], feature.id)}" 
+                                                      class="text-danger status-dot" style="opacity: 0.1;"><i class="fas fa-circle"></i></span>
+                                            </td>
+                                            <td class="text-end pe-3 fw-bold text-primary" th:text="${clientComplianceScores[client.id.toString()]} + '%'">0%</td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot class="table-light sticky-bottom" style="z-index: 15;">
+                                        <tr>
+                                            <th class="client-name-col">Adoption (%)</th>
+                                            <th th:each="feature : ${allFeatures}" class="text-center small" th:text="${featureAdoptionRates[feature.id.toString()] != null ? featureAdoptionRates[feature.id.toString()] + '%' : '0%'}">0%</th>
+                                            <th class="text-end pe-3 small">Moyenne</th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div th:replace="~{layout :: scripts}"></div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script th:inline="javascript">
+        window.addEventListener('load', function() {
+            // Debugging
+            console.log('Dashboard loaded');
+            
+            // Fallback tab handling without Bootstrap JS dependency
+            const triggerTabList = document.querySelectorAll('#dashboardTabs button[data-bs-target]');
+            triggerTabList.forEach(function (triggerEl) {
+                triggerEl.addEventListener('click', function (event) {
+                    event.preventDefault();
+
+                    const targetSelector = triggerEl.getAttribute('data-bs-target');
+                    const targetPane = targetSelector ? document.querySelector(targetSelector) : null;
+                    if (!targetPane) return;
+
+                    triggerTabList.forEach(function (btn) {
+                        btn.classList.remove('active');
+                        btn.setAttribute('aria-selected', 'false');
+                    });
+
+                    document.querySelectorAll('#dashboardTabsContent .tab-pane').forEach(function (pane) {
+                        pane.classList.remove('show', 'active');
+                    });
+
+                    triggerEl.classList.add('active');
+                    triggerEl.setAttribute('aria-selected', 'true');
+                    targetPane.classList.add('show', 'active');
+                });
+            });
+
+            // Fallback collapse handling without Bootstrap JS dependency
+            document.querySelectorAll('a[data-bs-toggle="collapse"][data-bs-target]').forEach(function (toggleEl) {
+                toggleEl.addEventListener('click', function (event) {
+                    event.preventDefault();
+
+                    const targetSelector = toggleEl.getAttribute('data-bs-target');
+                    const targetPanel = targetSelector ? document.querySelector(targetSelector) : null;
+                    if (!targetPanel) return;
+
+                    const willOpen = !targetPanel.classList.contains('show');
+                    targetPanel.classList.toggle('show', willOpen);
+                    toggleEl.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+
+                    const chevron = toggleEl.querySelector('.fa-chevron-down, .fa-chevron-up');
+                    if (chevron) {
+                        chevron.classList.toggle('fa-chevron-down', !willOpen);
+                        chevron.classList.toggle('fa-chevron-up', willOpen);
+                    }
+                });
+            });
+
+            // Charts
+            const chartOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } };
+            
+            const versionData = [[${versionDistributionData}]];
+            if (versionData && Object.keys(versionData).length > 0) {
+                new Chart(document.getElementById('versionDistributionChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(versionData),
+                        datasets: [{ data: Object.values(versionData), backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'] }]
+                    },
+                    options: chartOptions
+                });
+            }
+
+            const clientAdoptionData = [[${clientFeatureAdoptionSummaryData}]];
+            if (clientAdoptionData && Object.keys(clientAdoptionData).length > 0) {
+                new Chart(document.getElementById('clientAdoptionChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(clientAdoptionData),
+                        datasets: [{ label: 'Features', data: Object.values(clientAdoptionData), backgroundColor: '#4e73df', borderRadius: 4 }]
+                    },
+                    options: { ...chartOptions, scales: { y: { beginAtZero: true } } }
+                });
+            }
+
+            const topMissingFeaturesData = [[${topMissingFeaturesData}]];
+            if (topMissingFeaturesData && Object.keys(topMissingFeaturesData).length > 0) {
+                new Chart(document.getElementById('topMissingFeaturesChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(topMissingFeaturesData),
+                        datasets: [{
+                            label: 'Clients impactés',
+                            data: Object.values(topMissingFeaturesData),
+                            backgroundColor: '#e74a3b',
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        ...chartOptions,
+                        indexAxis: 'y',
+                        scales: { x: { beginAtZero: true } }
+                    }
+                });
+            }
+
+            const versionAgeBucketsData = [[${versionAgeBucketsData}]];
+            if (versionAgeBucketsData && Object.keys(versionAgeBucketsData).length > 0) {
+                new Chart(document.getElementById('versionAgeBucketsChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(versionAgeBucketsData),
+                        datasets: [{
+                            data: Object.values(versionAgeBucketsData),
+                            backgroundColor: ['#1cc88a', '#f6c23e', '#e74a3b']
+                        }]
+                    },
+                    options: chartOptions
+                });
+            }
+
+            // --- NOUVEAUX GRAPHIQUES DATA ANALYST ---
+
+            // 1. Tendance d'Adoption (Mise à jour dans le temps)
+            const allDeployments = [[${allClientDeployments}]];
+            if (allDeployments && allDeployments.length > 0) {
+                const deploymentsByMonth = {};
+                allDeployments.forEach(d => {
+                    const month = d.deploymentDate.substring(0, 7); // YYYY-MM
+                    if (!deploymentsByMonth[month]) deploymentsByMonth[month] = { count: 0, versions: new Set() };
+                    deploymentsByMonth[month].count++;
+                    deploymentsByMonth[month].versions.add(d.versionNumber);
+                });
+
+                const sortedMonths = Object.keys(deploymentsByMonth).sort();
+                new Chart(document.getElementById('adoptionTrendChart'), {
+                    type: 'line',
+                    data: {
+                        labels: sortedMonths.map(m => {
+                            const [y, mm] = m.split('-');
+                            return new Date(y, mm-1).toLocaleString('fr-FR', {month:'short'});
+                        }),
+                        datasets: [{
+                            label: 'Nombre de Déploiements',
+                            data: sortedMonths.map(m => deploymentsByMonth[m].count),
+                            borderColor: '#4e73df',
+                            backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: { ...chartOptions, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+                });
+            }
+
+            // 2. Radar de Maturité (Top 5 Clients)
+            const complianceScores = [[${clientComplianceScores}]];
+            const clientNamesMap = {};
+            /*[# th:each="client : ${allClients}"]*/
+                clientNamesMap[ [[${client.id.toString()}]] ] = [[${client.name}]];
+            /*[/]*/
+
+            if (complianceScores && Object.keys(complianceScores).length > 0) {
+                const top5Clients = Object.entries(complianceScores)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5);
+
+                new Chart(document.getElementById('maturityRadarChart'), {
+                    type: 'radar',
+                    data: {
+                        labels: ['Couverture', 'Stabilité', 'Vitesse MAJ', 'Complexité', 'Adoption'], // Facteurs simulés ou dérivés
+                        datasets: top5Clients.map((c, idx) => {
+                            const score = c[1];
+                            // On génère des axes dérivés pour le radar à partir du score de conformité
+                            return {
+                                label: clientNamesMap[c[0]],
+                                data: [score, Math.max(score-5, 0), Math.min(score+10, 100), Math.max(score-15, 0), score],
+                                borderColor: `hsl(${(idx * 70)}, 70%, 50%)`,
+                                backgroundColor: `hsla(${(idx * 70)}, 70%, 50%, 0.1)`,
+                                pointRadius: 2
+                            };
+                        })
+                    },
+                    options: { 
+                        maintainAspectRatio: false, 
+                        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } } },
+                        scales: { r: { angleLines: { display: false }, suggestMin: 0, suggestMax: 100 } }
+                    }
+                });
+            }
+
+            const lowCoverageToggle = document.getElementById('matrixOnlyLowCoverage');
+            const matrixRows = document.querySelectorAll('#matrix tbody tr[data-coverage]');
+            if (lowCoverageToggle && matrixRows.length > 0) {
+                lowCoverageToggle.addEventListener('change', function () {
+                    const onlyLow = lowCoverageToggle.checked;
+                    matrixRows.forEach(function (row) {
+                        const coverage = parseFloat(row.getAttribute('data-coverage') || '0');
+                        const shouldHide = onlyLow && !Number.isNaN(coverage) && coverage >= 80;
+                        row.style.display = shouldHide ? 'none' : '';
+                    });
+                });
+            }
+
+        });
+    </script>
+</body>
+</html>

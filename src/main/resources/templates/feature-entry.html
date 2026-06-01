@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Enregistrement de Déploiement')}"></head>
+<body>
+
+    <div th:replace="~{layout :: sidebar('feature-tracking-entry')}"></div>
+    <div th:replace="~{layout :: header(|Enregistrer un Déploiement Client|)}"></div>
+
+    <main class="main-content">
+        <div class="card card-custom mb-4 shadow-sm border-0">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Nouvel Enregistrement de Déploiement</h5>
+                <form th:action="@{/feature-tracking/save}" method="post">
+                    <div class="mb-3">
+                        <label for="clientId" class="form-label">Client</label>
+                        <select id="clientId" name="clientId" class="form-select" required>
+                            <option value="">Sélectionner un client</option>
+                            <option th:each="client : ${allClients}"
+                                    th:value="${client.id}"
+                                    th:text="${client.name}"
+                                    th:selected="${client.id == selectedClientId}"></option>
+                        </select>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="versionNumber" class="form-label">Version de l'Application</label>
+                            <input type="text" id="versionNumber" name="versionNumber" class="form-control"
+                                   placeholder="Ex: 1.0.0" th:value="${versionNumber}" required>
+                            <div class="form-text">Si la version n'existe pas, elle sera créée automatiquement.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="projectName" class="form-label">Nom du Projet (Image)</label>
+                            <input type="text" id="projectName" name="projectName" class="form-control"
+                                   placeholder="Ex: ACE3i-Connect" th:value="${projectName}">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="branchName" class="form-label">Branche Git associée</label>
+                            <input type="text" id="branchName" name="branchName" class="form-control"
+                                   placeholder="Ex: master, develop, feature/xyz" th:value="${branchName}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="deploymentDate" class="form-label">Date de Déploiement</label>
+                            <input type="date" id="deploymentDate" name="deploymentDate" class="form-control"
+                                   th:value="${deploymentDate}" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="deployedFeatures" class="form-label">Fonctionnalités Déployées (une par ligne)</label>
+                        <textarea class="form-control" id="deployedFeatures" name="deployedFeatures" rows="10"
+                                  placeholder="Copier/coller les noms des fonctionnalités ici, une par ligne." th:text="${deployedFeatures}"></textarea>
+                        <div class="form-text">Chaque ligne sera traitée comme une fonctionnalité distincte. Si la fonctionnalité n'existe pas, elle sera créée.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="clientSpecificFeatures" class="form-label">Fonctionnalités Spécifiques au Client (une par ligne)</label>
+                        <textarea class="form-control" id="clientSpecificFeatures" name="clientSpecificFeatures" rows="5"
+                                  placeholder="Saisis ici les fonctionnalités propres à ce client." th:text="${clientSpecificFeatures}"></textarea>
+                        <div class="form-text">Ces fonctionnalités seront marquées comme spécifiques et exclues des indicateurs globaux.</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Enregistrer le Déploiement</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card card-custom mb-4 shadow-sm border-0">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0">Modifier les fonctionnalités de la version client</h5>
+                    <a class="btn btn-outline-primary btn-sm"
+                       th:if="${selectedClientId != null}"
+                       th:href="@{/feature-tracking/entry(clientId=${selectedClientId})}">
+                        Recharger la liste
+                    </a>
+                </div>
+
+                <p class="text-muted mb-3">Sélectionne un client ci-dessus pour gérer les fonctionnalités déjà incluses dans son dernier déploiement.</p>
+
+                <div th:if="${selectedClientId == null}" class="alert alert-info mb-0">
+                    Choisis d'abord un client dans le formulaire de déploiement.
+                </div>
+
+                <div th:if="${selectedClientId != null and selectedDeployment == null}" class="alert alert-warning mb-0">
+                    Ce client n'a pas encore de version déployée.
+                </div>
+
+                <div th:if="${selectedDeployment != null}">
+                    <div class="mb-3">
+                        <span class="badge bg-light text-primary border me-2" th:text="${selectedDeployment.applicationVersion.versionNumber}">v1.0.0</span>
+                        <span class="text-muted">Date de déploiement : <span th:text="${selectedDeployment.deploymentDate}">2026-01-01</span></span>
+                    </div>
+
+                    <div th:if="${#lists.isEmpty(selectedDeploymentFeatures)}" class="alert alert-light border mb-0">
+                        Aucune fonctionnalité associée à cette version.
+                    </div>
+
+                    <div th:unless="${#lists.isEmpty(selectedDeploymentFeatures)}" class="table-responsive">
+                        <form id="bulkDeleteForm"
+                              th:action="@{/feature-tracking/feature/delete-selected}"
+                              method="post">
+                            <input type="hidden" name="clientId" th:value="${selectedClientId}">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectAllFeatures">
+                                    <label class="form-check-label" for="selectAllFeatures">Tout sélectionner</label>
+                                </div>
+                                <button type="submit" id="bulkDeleteBtn" class="btn btn-sm btn-danger" disabled>
+                                    Supprimer la sélection
+                                </button>
+                            </div>
+                        </form>
+                        <table class="table table-sm align-middle">
+                            <thead>
+                            <tr>
+                                <th style="width: 45px;">Sel.</th>
+                                <th>Fonctionnalité actuelle</th>
+                                <th style="width: 120px;">Type</th>
+                                <th>Nouveau nom</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="deploymentFeature : ${selectedDeploymentFeatures}">
+                                <td>
+                                    <input class="form-check-input feature-checkbox"
+                                           type="checkbox"
+                                           name="deploymentFeatureIds"
+                                           th:value="${deploymentFeature.id}"
+                                           form="bulkDeleteForm">
+                                </td>
+                                <td th:text="${deploymentFeature.feature.name}">Nom fonctionnalité</td>
+                                <td>
+                                    <span class="badge bg-warning text-dark" th:if="${deploymentFeature.clientSpecific}">Spécifique</span>
+                                    <span class="badge bg-light text-primary border" th:unless="${deploymentFeature.clientSpecific}">Globale</span>
+                                </td>
+                                <td>
+                                    <form class="d-flex gap-2"
+                                          th:action="@{/feature-tracking/feature/{id}/update(id=${deploymentFeature.id})}"
+                                          method="post">
+                                        <input type="hidden" name="clientId" th:value="${selectedClientId}">
+                                        <input type="text" name="newFeatureName" class="form-control form-control-sm"
+                                               th:value="${deploymentFeature.feature.name}" required>
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">Modifier</button>
+                                    </form>
+                                </td>
+                                <td class="text-end">
+                                    <form th:action="@{/feature-tracking/feature/{id}/delete(id=${deploymentFeature.id})}"
+                                          method="post"
+                                          class="single-delete-form">
+                                        <input type="hidden" name="clientId" th:value="${selectedClientId}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div th:replace="~{layout :: scripts}"></div>
+    <script>
+        (function () {
+            const clientSelect = document.getElementById('clientId');
+            if (!clientSelect) return;
+            clientSelect.addEventListener('change', function () {
+                if (!clientSelect.value) return;
+                window.location.href = '/feature-tracking/entry?clientId=' + encodeURIComponent(clientSelect.value);
+            });
+
+            const selectAll = document.getElementById('selectAllFeatures');
+            const checkboxes = Array.from(document.querySelectorAll('.feature-checkbox'));
+            const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+
+            function refreshBulkDeleteState() {
+                if (!bulkDeleteBtn) return;
+                const checkedCount = checkboxes.filter(function (cb) { return cb.checked; }).length;
+                bulkDeleteBtn.disabled = checkedCount === 0;
+            }
+
+            if (selectAll && checkboxes.length > 0) {
+                selectAll.addEventListener('change', function () {
+                    checkboxes.forEach(function (cb) { cb.checked = selectAll.checked; });
+                    refreshBulkDeleteState();
+                });
+            }
+
+            checkboxes.forEach(function (cb) {
+                cb.addEventListener('change', function () {
+                    if (selectAll) {
+                        selectAll.checked = checkboxes.length > 0 && checkboxes.every(function (item) { return item.checked; });
+                    }
+                    refreshBulkDeleteState();
+                });
+            });
+
+            const bulkDeleteForm = document.getElementById('bulkDeleteForm');
+            const singleDeleteForms = document.querySelectorAll('.single-delete-form');
+
+            refreshBulkDeleteState();
+
+            if (bulkDeleteForm) {
+                bulkDeleteForm.addEventListener('submit', function (event) {
+                    event.preventDefault();
+                    const selectedCount = document.querySelectorAll('.feature-checkbox:checked').length;
+                    if (selectedCount === 0) {
+                        showWarning('Sélectionne au moins une fonctionnalité.');
+                        return;
+                    }
+
+                    askConfirmation(
+                        'Supprimer la sélection ?',
+                        'Tu vas supprimer ' + selectedCount + ' fonctionnalité(s) sélectionnée(s).',
+                        function () { bulkDeleteForm.submit(); }
+                    );
+                });
+            }
+
+            singleDeleteForms.forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    event.preventDefault();
+                    askConfirmation(
+                        'Supprimer la fonctionnalité ?',
+                        'Cette fonctionnalité sera retirée de la version client.',
+                        function () { form.submit(); }
+                    );
+                });
+            });
+        })();
+
+        function showWarning(message) {
+            if (window.Swal) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Attention',
+                    text: message,
+                    confirmButtonColor: '#ee7725'
+                });
+                return;
+            }
+            alert(message);
+        }
+
+        function askConfirmation(title, text, onConfirm) {
+            if (window.Swal) {
+                Swal.fire({
+                    title: title,
+                    text: text,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ee7725',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Oui, supprimer',
+                    cancelButtonText: 'Annuler',
+                    reverseButtons: true
+                }).then(function (result) {
+                    if (result.isConfirmed) {
+                        onConfirm();
+                    }
+                });
+                return;
+            }
+
+            if (confirm(text)) {
+                onConfirm();
+            }
+        }
+    </script>
+</body>
+</html>
