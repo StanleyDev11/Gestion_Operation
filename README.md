@@ -1,88 +1,95 @@
-# ACE3i Connect - Système de Suivi des Interventions
+# ACE3i Connect - Système de Suivi des Interventions & Analytics
 
-ACE3i Connect est une application web de gestion et de suivi des missions d'intervention technique. Elle permet de centraliser les rapports de prestation, de suivre l'état des tâches et de générer des fiches d'intervention professionnelles au format PDF.
+ACE3i Connect est une solution métier avancée pour la gestion, le suivi et l'analyse des missions d'intervention technique. Conçue pour transformer les données opérationnelles en indicateurs décisionnels, elle permet de centraliser les rapports, de piloter la conformité applicative et de générer des rapports analytiques de haute qualité.
 
-## 🚀 Fonctionnalités Principales
+## 🚀 Fonctionnalités Clés
 
-- **Suivi des Missions** : Saisie détaillée des interventions (Projet, Client, Intervenants, Durée).
-- **Analyse du Problème** : Section dédiée pour le service concerné, la description du problème et l'analyse de la cause racine.
-- **Types d'Intervention** : Gestion de 12 types d'intervention (Correctif, Incident, Support, Évolution, Formation, Installation, etc.).
-- **Génération PDF** : Export automatique des fiches de prestation et rapports périodiques.
-- **Suivi Fonctionnalités** : Mapping des fonctionnalités déployées par client et par version.
-- **Administration** : Gestion du personnel, journal d'audit complet et monitoring de la santé système.
+- **Pilotage des Missions** : Saisie structurée des interventions (Projet, Client, Intervenants, Durée réelle).
+- **Diagnostic Technique** : Sections dédiées à l'analyse de cause racine (Root Cause Analysis) et à la description des solutions.
+- **Reporting "Data Analyst"** : 
+    - Génération de rapports périodiques HTML/PDF sur 6 pages.
+    - Graphiques de tendance mensuelle, répartition de la charge par type et équilibre Valeur vs Support.
+    - Top Projets par consommation de ressources.
+- **Conformité & Versioning** : Mapping complet des fonctionnalités déployées par client et suivi des écarts de version.
+- **Sécurité "Enterprise Ready"** : Intégration avec **HashiCorp Vault** pour la gestion centralisée des secrets.
 
-## 🛠️ Stack Technique
+## 🛠️ Stack Technique Moderne
 
-- **Backend** : Java 17+, Spring Boot 3.x
-- **Persistance** : Spring Data JPA, Hibernate
-- **Base de données** : MySQL 8.x
-- **Frontend** : Thymeleaf, Bootstrap 5, FontAwesome 6
-- **PDF** : iText 7
-- **Sécurité** : Spring Security (RBAC - Admin/User)
+- **Core** : Java 21, Spring Boot 3.4.1
+- **Gestion des Secrets** : Spring Cloud Vault (Bootstrap Config)
+- **Persistance** : Spring Data JPA (MySQL 8.x)
+- **Reporting** : iText 7.2 (PDF), Chart.js (DataViz HTML)
+- **Interface** : Thymeleaf, Bootstrap 5.3, FontAwesome 6
+- **Configuration** : Format YAML (`application.yml` & `bootstrap.yml`)
 
 ## 📋 Prérequis
 
-Avant de commencer, assurez-vous d'avoir installé :
-- [Java JDK 17+](https://www.oracle.com/java/technologies/downloads/)
-- [Maven 3.8+](https://maven.apache.org/)
-- [MySQL Server 8.0+](https://dev.mysql.com/downloads/mysql/)
+- **Java JDK 21**
+- **Maven 3.9+**
+- **MySQL 8.0+**
+- **Docker** (Optionnel, pour le déploiement conteneurisé)
+- **Vault Server** (Optionnel pour le dev local si `enabled: false`)
 
-## ⚙️ Configuration
+## ⚙️ Configuration & Secrets
 
-1. **Base de données** :
-   - Créez une base de données MySQL nommée `db_missions`.
-   ```sql
-   CREATE DATABASE db_missions CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+L'application utilise désormais le format **YAML** et **Spring Cloud Vault**.
+
+1. **Configuration du Démarrage (`src/main/resources/bootstrap.yml`)** :
+   ```yaml
+   spring:
+     cloud:
+       vault:
+         uri: ${VAULT_ADDR}
+         token: ${VAULT_TOKEN}
+         kv:
+           enabled: true
    ```
 
-2. **Configuration de l'application** :
-   - Modifiez le fichier `src/main/resources/application.properties` pour configurer vos accès :
-   ```properties
-   spring.datasource.url=jdbc:mysql://localhost:3306/db_missions?createDatabaseIfNotExist=true&serverTimezone=UTC
-   spring.datasource.username=votre_utilisateur
-   spring.datasource.password=votre_mot_de_passe
-   
-   # Mode de mise à jour de la base (update pour le développement)
-   spring.jpa.hibernate.ddl-auto=update
+2. **Base de données (`src/main/resources/application.yml`)** :
+   ```yaml
+   spring:
+     datasource:
+       url: jdbc:mysql://localhost:3306/db_missions?createDatabaseIfNotExist=true
+       username: root
+       password: ${DB_PASSWORD}
    ```
-
-## 🏃 Démarrage (Développement)
-
-Pour lancer l'application en mode développement :
-
-```bash
-mvn spring-boot:run
-```
-L'application sera accessible sur : `http://localhost:8087`
-
-**Identifiants par défaut** (si initialisés) :
-- Admin : `admin` / `admin123`
-- User : `user` / `user123`
-
-## 📦 Build et Packaging
-
-Pour générer le fichier exécutable JAR :
-
-```bash
-mvn clean package -DskipTests
-```
-Le fichier JAR sera généré dans le dossier `target/ace3i-connect-0.0.1-SNAPSHOT.jar`.
 
 ## 🚢 Déploiement
 
-### Déploiement Standard (Serveur Linux/Windows)
+### Déploiement avec Docker (Recommandé)
 
-1. Transférez le fichier `.jar` sur votre serveur.
-2. Lancez l'application en tant que service ou via la ligne de commande :
+1. **Construire l'image** :
    ```bash
-   java -jar ace3i-connect-0.0.1-SNAPSHOT.jar
+   docker build -t ace3i-connect .
    ```
 
-### Recommandations de Production
-- Changez `spring.jpa.hibernate.ddl-auto` à `validate` ou `none`.
-- Utilisez un reverse proxy comme **Nginx** pour gérer le SSL (HTTPS).
-- Configurez des variables d'environnement pour les secrets (mots de passe DB).
+2. **Lancer le conteneur** :
+   ```bash
+   docker run -d \
+     -p 8087:8087 \
+     -e VAULT_ADDR='http://votre-serveur-vault:8200' \
+     -e VAULT_TOKEN='votre-token-vault' \
+     --name ace3i-app \
+     ace3i-connect
+   ```
 
-## 📄 Licence
+### Déploiement Standard (JAR)
+```bash
+# Compilation
+mvn clean package -DskipTests
 
-Ce projet est la propriété exclusive de **ACE3i**. Tous droits réservés.
+# Lancement
+java -jar target/ace3i-connect-0.0.1-SNAPSHOT.jar
+```
+
+## 📊 Analytics & Reporting
+Le nouveau moteur de rendu permet de générer des synthèses d'activité sur 6 pages incluant :
+1. Page de Garde institutionnelle.
+2. Timeline Chronologique & Top Projets.
+3. Tendance Mensuelle & Statuts.
+4. Analyse stratégique de la Charge.
+5. État de Conformité Applicative.
+6. Historique détaillé & Visas.
+
+## 📄 Propriété
+Ce projet est la propriété exclusive de **ACE3i**. Toute reproduction ou utilisation sans autorisation est interdite.

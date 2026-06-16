@@ -17,6 +17,10 @@ import com.itextpdf.layout.borders.DottedBorder;
 import com.itextpdf.layout.borders.SolidBorder;
 import com.itextpdf.layout.element.*;
 import com.itextpdf.layout.properties.*;
+import com.itextpdf.io.font.otf.GlyphLine;
+import com.itextpdf.layout.properties.Property;
+import com.itextpdf.layout.splitting.DefaultSplitCharacters;
+import com.itextpdf.layout.splitting.ISplitCharacters;
 import com.ace3i.connect.entity.AppConfig;
 import com.ace3i.connect.entity.Client;
 import com.ace3i.connect.entity.ClientDeployment;
@@ -46,6 +50,14 @@ import java.util.stream.Collectors;
 
 @Service
 public class MissionService implements IMissionService {
+
+    // Stratégie pour forcer le retour à la ligne même sur les mots longs sans espaces
+    private static final ISplitCharacters SPLIT_ALL = new DefaultSplitCharacters() {
+        @Override
+        public boolean isSplitCharacter(GlyphLine text, int characterIndex) {
+            return true;
+        }
+    };
 
     // Couleurs professionnelles
     private static final DeviceRgb COLOR_PRIMARY = new DeviceRgb(238, 119, 37);      // Orange ACE3i
@@ -214,13 +226,19 @@ public class MissionService implements IMissionService {
             Cell analysisCell = new Cell().setPadding(8).setBorder(new SolidBorder(new DeviceRgb(220, 220, 220), 0.5f)).setBackgroundColor(new DeviceRgb(252, 252, 252));
             
             if (mission.getServiceConcerne() != null && !mission.getServiceConcerne().isEmpty()) {
-                analysisCell.add(new Paragraph().add(new com.itextpdf.layout.element.Text("Service Concerné : ").setBold().setFontSize(8)).add(new com.itextpdf.layout.element.Text(mission.getServiceConcerne()).setFontSize(8)));
+                Paragraph p = new Paragraph().add(new com.itextpdf.layout.element.Text("Service Concerné : ").setBold().setFontSize(8)).add(new com.itextpdf.layout.element.Text(mission.getServiceConcerne()).setFontSize(8));
+                p.setProperty(Property.SPLIT_CHARACTERS, SPLIT_ALL);
+                analysisCell.add(p);
             }
             if (mission.getProblemDescription() != null && !mission.getProblemDescription().isEmpty()) {
-                analysisCell.add(new Paragraph().add(new com.itextpdf.layout.element.Text("Description du problème : ").setBold().setFontSize(8)).add(new com.itextpdf.layout.element.Text(mission.getProblemDescription()).setFontSize(8)));
+                Paragraph p = new Paragraph().add(new com.itextpdf.layout.element.Text("Description du problème : ").setBold().setFontSize(8)).add(new com.itextpdf.layout.element.Text(mission.getProblemDescription()).setFontSize(8));
+                p.setProperty(Property.SPLIT_CHARACTERS, SPLIT_ALL);
+                analysisCell.add(p);
             }
             if (mission.getRootCause() != null && !mission.getRootCause().isEmpty()) {
-                analysisCell.add(new Paragraph().add(new com.itextpdf.layout.element.Text("Cause identifiée : ").setBold().setFontSize(8)).add(new com.itextpdf.layout.element.Text(mission.getRootCause()).setFontSize(8)));
+                Paragraph p = new Paragraph().add(new com.itextpdf.layout.element.Text("Cause identifiée : ").setBold().setFontSize(8)).add(new com.itextpdf.layout.element.Text(mission.getRootCause()).setFontSize(8));
+                p.setProperty(Property.SPLIT_CHARACTERS, SPLIT_ALL);
+                analysisCell.add(p);
             }
             // La solution (procédure) est volontairement omise de la fiche de prestation
             
@@ -231,7 +249,9 @@ public class MissionService implements IMissionService {
 
         document.add(new Paragraph("TRAVAUX RÉALISÉS DURANT LA MISSION").setBold().setFontSize(9).setMarginTop(12).setMarginBottom(5));
         Table descTable = new Table(1).useAllAvailableWidth();
-        descTable.addCell(new Cell().add(new Paragraph(mission.getDescription())).setMinHeight(180).setPadding(8).setFontSize(9).setVerticalAlignment(VerticalAlignment.TOP));
+        Paragraph descPara = new Paragraph(mission.getDescription());
+        descPara.setProperty(Property.SPLIT_CHARACTERS, SPLIT_ALL);
+        descTable.addCell(new Cell().add(descPara).setMinHeight(180).setPadding(8).setFontSize(9).setVerticalAlignment(VerticalAlignment.TOP));
         descTable.setKeepTogether(true);
         document.add(descTable);
 
@@ -882,8 +902,10 @@ public class MissionService implements IMissionService {
     }
 
     private Cell createTableCell(String text, DeviceRgb bgColor) {
+        Paragraph p = new Paragraph(text != null ? text : "").setFontSize(8);
+        p.setProperty(Property.SPLIT_CHARACTERS, SPLIT_ALL);
         return new Cell()
-                .add(new Paragraph(text != null ? text : "").setFontSize(8))
+                .add(p)
                 .setBackgroundColor(bgColor)
                 .setPadding(6);
     }
@@ -989,12 +1011,15 @@ public class MissionService implements IMissionService {
 
     private Cell createFeatureKpiCell(String label, String value, DeviceRgb valueColor) {
         Table kpi = new Table(1).useAllAvailableWidth();
-        kpi.addCell(new Cell()
-                .add(new Paragraph(label).setFontSize(7).setBold().setFontColor(COLOR_GRAY).setTextAlignment(TextAlignment.CENTER))
-                .setBorder(Border.NO_BORDER));
-        kpi.addCell(new Cell()
-                .add(new Paragraph(value).setFontSize(11).setBold().setFontColor(valueColor).setTextAlignment(TextAlignment.CENTER))
-                .setBorder(Border.NO_BORDER));
+        
+        Paragraph pLabel = new Paragraph(label).setFontSize(7).setBold().setFontColor(COLOR_GRAY).setTextAlignment(TextAlignment.CENTER);
+        pLabel.setProperty(Property.SPLIT_CHARACTERS, SPLIT_ALL);
+        kpi.addCell(new Cell().add(pLabel).setBorder(Border.NO_BORDER));
+        
+        Paragraph pValue = new Paragraph(value).setFontSize(11).setBold().setFontColor(valueColor).setTextAlignment(TextAlignment.CENTER);
+        pValue.setProperty(Property.SPLIT_CHARACTERS, SPLIT_ALL);
+        kpi.addCell(new Cell().add(pValue).setBorder(Border.NO_BORDER));
+        
         return new Cell()
                 .add(kpi)
                 .setBorder(new SolidBorder(COLOR_LIGHT, 0.8f))
@@ -1007,16 +1032,21 @@ public class MissionService implements IMissionService {
                 .setBorder(new SolidBorder(COLOR_LIGHT, 0.8f))
                 .setBorderRadius(new BorderRadius(5))
                 .setPadding(8);
-        cell.add(new Paragraph(title).setFontSize(8).setBold().setFontColor(titleColor).setMarginBottom(4));
+                
+        Paragraph pTitle = new Paragraph(title).setFontSize(8).setBold().setFontColor(titleColor).setMarginBottom(4);
+        pTitle.setProperty(Property.SPLIT_CHARACTERS, SPLIT_ALL);
+        cell.add(pTitle);
 
         if (values == null || values.isEmpty()) {
             cell.add(new Paragraph("Aucun élément.").setFontSize(7).setFontColor(COLOR_GRAY));
             return cell;
         }
 
-        values.stream().limit(8).forEach(item ->
-                cell.add(new Paragraph("• " + item).setFontSize(7).setMarginBottom(1))
-        );
+        values.stream().limit(8).forEach(item -> {
+                Paragraph pItem = new Paragraph("• " + item).setFontSize(7).setMarginBottom(1);
+                pItem.setProperty(Property.SPLIT_CHARACTERS, SPLIT_ALL);
+                cell.add(pItem);
+        });
         if (values.size() > 8) {
             cell.add(new Paragraph("... +" + (values.size() - 8) + " autres").setFontSize(7).setFontColor(COLOR_GRAY));
         }
@@ -1396,7 +1426,9 @@ public class MissionService implements IMissionService {
     }
 
     private Cell createValueCell(String text) {
-        return new Cell().add(new Paragraph(text != null ? text : "").setFontSize(10).setUnderline()).setBorder(Border.NO_BORDER);
+        Paragraph p = new Paragraph(text != null ? text : "").setFontSize(10).setUnderline();
+        p.setProperty(Property.SPLIT_CHARACTERS, SPLIT_ALL);
+        return new Cell().add(p).setBorder(Border.NO_BORDER);
     }
 
     private Cell createCheckboxCell(String label, boolean checked) {
@@ -1426,7 +1458,9 @@ public class MissionService implements IMissionService {
     private Cell createValidationCell(String title, String obs) {
         Cell cell = new Cell().setPadding(5).setBorder(new SolidBorder(new DeviceRgb(200, 200, 200), 0.5f)).setMinHeight(100);
         cell.add(new Paragraph(title).setBold().setUnderline().setFontSize(9).setMarginBottom(5));
-        cell.add(new Paragraph(obs != null ? obs : "").setFontSize(8).setMultipliedLeading(1.2f).setTextAlignment(TextAlignment.LEFT));
+        Paragraph pObs = new Paragraph(obs != null ? obs : "").setFontSize(8).setMultipliedLeading(1.2f).setTextAlignment(TextAlignment.LEFT);
+        pObs.setProperty(Property.SPLIT_CHARACTERS, SPLIT_ALL);
+        cell.add(pObs);
         String dt = java.time.LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
         Table f = new Table(UnitValue.createPercentArray(new float[]{50, 50})).useAllAvailableWidth().setMarginTop(10);
         f.addCell(new Cell().add(new Paragraph("Date: " + dt)).setBorder(Border.NO_BORDER).setFontSize(8));

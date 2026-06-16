@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Rapport d'Activité Moderne - ACE3i Connect</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #ee7725; /* Orange ACE3i */
+            --secondary-color: #67bed9; /* Bleu ACE3i */
+            --success-color: #28a745;
+            --info-color: #17a2b8;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --ace3i-dark: #343a40;
+            --light-gray: #f8f9fc;
+            --border-color: #e3e6f0;
+        }
+        body {
+            background-color: #525659;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .report-container {
+            width: 210mm;
+            margin: 30px auto;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        .page {
+            width: 210mm;
+            height: 297mm;
+            padding: 15mm 20mm;
+            position: relative;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.4);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            opacity: 0.04;
+            width: 80%;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .page-content {
+            position: relative;
+            z-index: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .header-logo {
+            max-height: 50px;
+            max-width: 130px;
+            object-fit: contain;
+        }
+        .header-line {
+            height: 3px;
+            background: var(--primary-color);
+            margin: 10px 0 20px 0;
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .section-number {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            line-height: 1;
+            margin-right: 15px;
+        }
+        .section-title {
+            text-transform: uppercase;
+            font-weight: 800;
+            color: var(--ace3i-dark);
+            margin: 0;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+        }
+        .section-subtitle {
+            font-size: 0.75rem;
+            color: var(--secondary-color);
+            margin: 0;
+            font-weight: 600;
+        }
+        .card-stat {
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            border-radius: 10px;
+            background: #fff;
+        }
+        .kpi-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+        }
+        .kpi-label {
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: var(--secondary-color);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .timeline-grid {
+            display: grid;
+            grid-template-columns: repeat(31, 1fr);
+            gap: 2px;
+        }
+        .day-box {
+            height: 18px;
+            background: #f1f3f9;
+            border-radius: 2px;
+        }
+        .day-active { background: var(--secondary-color); }
+        .day-high { background: var(--primary-color); }
+        
+        .progress-modern {
+            height: 8px;
+            border-radius: 4px;
+            background: #f1f3f9;
+            overflow: hidden;
+            display: flex;
+        }
+        .chart-card {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 12px;
+            height: 100%;
+        }
+        .chart-title {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: var(--ace3i-dark);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 5px;
+        }
+        .feature-list {
+            font-size: 0.7rem;
+            list-style: none;
+            padding-left: 0;
+        }
+        .feature-list li {
+            padding: 4px 0;
+            border-bottom: 1px solid #f8f9fc;
+        }
+        .feature-list li::before {
+            content: "•";
+            color: var(--primary-color);
+            margin-right: 8px;
+            font-weight: bold;
+        }
+        .table-modern {
+            font-size: 0.7rem;
+        }
+        .table-modern thead th {
+            background: var(--ace3i-dark);
+            color: white;
+            border: none;
+            padding: 8px;
+        }
+        .footer-info {
+            font-size: 0.65rem;
+            color: #858796;
+            margin-top: auto;
+            border-top: 1px solid #eee;
+            padding-top: 8px;
+        }
+        .print-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+            border-radius: 50px;
+            padding: 12px 25px;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            background: var(--primary-color);
+            border: none;
+            color: white;
+        }
+        @media print {
+            body { background: white; }
+            .report-container { margin: 0; gap: 0; }
+            .print-btn { display: none !important; }
+            .page { box-shadow: none; margin: 0; border: none; page-break-after: always; }
+        }
+    </style>
+</head>
+<body>
+
+    <button class="print-btn no-print" onclick="window.print()">
+        <i class="fas fa-file-pdf me-2"></i> EXPORTER LE RAPPORT
+    </button>
+
+    <div class="report-container">
+        
+        <!-- PAGE 1: COUVERTURE -->
+        <div class="page">
+            <img th:if="${config.watermarkImage}" th:src="${config.watermarkImage}" class="watermark">
+            <div class="page-content justify-content-center text-center">
+                <div class="d-flex justify-content-between w-100 mb-5" style="position: absolute; top: 15mm; left: 0; padding: 0 20mm;">
+                    <img th:if="${config.logoLeft}" th:src="${config.logoLeft}" class="header-logo">
+                    <img th:if="${config.logoRight}" th:src="${config.logoRight}" class="header-logo">
+                </div>
+
+                <div style="background: #f8f9fc; padding: 50px 30px; width: 100%; border-radius: 15px; margin-top: 30px; border: 1px solid #eee;">
+                    <h1 style="font-size: 3.5rem; font-weight: 900; color: var(--ace3i-dark); margin-bottom: 0;">RAPPORT D'ACTIVITÉ</h1>
+                    <h2 style="font-size: 2.2rem; font-weight: 700; color: var(--primary-color); margin-top: -5px;">PÉRIODIQUE</h2>
+                </div>
+                
+                <div style="margin-top: 60px;">
+                    <p class="text-uppercase fw-bold text-muted small" style="letter-spacing: 3px;">Destinataire</p>
+                    <h2 style="font-size: 2.5rem; font-weight: 800;" th:text="${clientName}">NOM DU CLIENT</h2>
+                </div>
+
+                <div style="margin-top: 40px;">
+                    <p class="text-uppercase fw-bold text-muted small" style="letter-spacing: 3px;">Période d'intervention</p>
+                    <p class="h3 italic text-dark" th:text="'Du ' + ${startDate} + ' au ' + ${endDate}">01/01/2026 - 31/03/2026</p>
+                </div>
+
+                <div class="footer-info mt-auto text-center">
+                    <p class="mb-1 fw-bold">Document confidentiel généré par ACE3i Connect</p>
+                    <p class="mb-0" th:text="'Édité le ' + ${generationDate}">Date</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 2: TIMELINE & TOP PROJETS -->
+        <div class="page">
+            <img th:if="${config.watermarkImage}" th:src="${config.watermarkImage}" class="watermark">
+            <div class="page-content">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-bold" style="color: var(--primary-color);">01 SYNTHÈSE D'ACTIVITÉ</span>
+                    <span class="fw-bold small text-muted">ACE3i AFRICA</span>
+                </div>
+                <div class="header-line"></div>
+
+                <div class="section-header">
+                    <div class="section-number">01</div>
+                    <div>
+                        <h4 class="section-title">Timeline & Indicateurs</h4>
+                        <p class="section-subtitle">Visualisation de l'intensité sur la période</p>
+                    </div>
+                </div>
+                
+                <div class="card-stat mb-4">
+                    <div class="timeline-grid" id="timelineGrid"></div>
+                    <div class="d-flex justify-content-between small text-muted mt-2" style="font-size: 0.6rem;">
+                        <span th:text="${startDate}">Début</span>
+                        <div class="d-flex gap-3">
+                            <span><i class="fas fa-square" style="color: var(--secondary-color);"></i> Activité</span>
+                            <span><i class="fas fa-square" style="color: var(--primary-color);"></i> Haute Intensité</span>
+                        </div>
+                        <span th:text="${endDate}">Fin</span>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-5">
+                    <div class="col-4"><div class="card-stat text-center"><div class="kpi-label">Missions</div><div class="kpi-value" th:text="${#lists.size(missions)}">0</div></div></div>
+                    <div class="col-4"><div class="card-stat text-center"><div class="kpi-label">Volume Jours</div><div class="kpi-value text-primary" id="totalDaysLabel">0</div></div></div>
+                    <div class="col-4"><div class="card-stat text-center"><div class="kpi-label">Expertise</div><div class="kpi-value text-info" style="font-size: 1rem; padding-top: 8px;" id="topIntervenerLabel">N/A</div></div></div>
+                </div>
+
+                <div class="section-header">
+                    <div class="section-number" style="font-size: 1.8rem;">02</div>
+                    <div>
+                        <h4 class="section-title" style="font-size: 1.1rem;">Top Projets</h4>
+                        <p class="section-subtitle">Consommation par projet (Volume Jours)</p>
+                    </div>
+                </div>
+
+                <div class="card-stat bg-light border-0 p-4" style="flex-grow: 1;">
+                    <div id="projectBarsContainer" class="mt-2"></div>
+                </div>
+
+                <div class="footer-info d-flex justify-content-between">
+                    <span th:text="${config.companyName}">ACE3i AFRICA</span>
+                    <span>Page 2 / 5</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 3: ANALYSE D'ACTIVITÉ (GRAPHIQUES) -->
+        <div class="page">
+            <img th:if="${config.watermarkImage}" th:src="${config.watermarkImage}" class="watermark">
+            <div class="page-content">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-bold" style="color: var(--primary-color);">02 ANALYSE D'ACTIVITÉ</span>
+                    <span class="fw-bold small text-muted" th:text="${clientName}">Client</span>
+                </div>
+                <div class="header-line"></div>
+
+                <div class="section-header">
+                    <div class="section-number">03</div>
+                    <div>
+                        <h4 class="section-title">Analyse de Performance</h4>
+                        <p class="section-subtitle">Tendance temporelle et répartition</p>
+                    </div>
+                </div>
+
+                <div class="row g-4" style="flex-grow: 1;">
+                    <div class="col-12">
+                        <div class="chart-card">
+                            <div class="chart-title">Tendance Mensuelle (Volume Jours)</div>
+                            <div style="height: 200px;"><canvas id="trendChart"></canvas></div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="chart-card">
+                            <div class="chart-title">Distribution par Type</div>
+                            <div style="height: 220px;"><canvas id="typeDistChart"></canvas></div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="chart-card">
+                            <div class="chart-title">Statuts des Missions</div>
+                            <div style="height: 220px;"><canvas id="statusChart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="footer-info d-flex justify-content-between">
+                    <span th:text="${config.companyName}">ACE3i AFRICA</span>
+                    <span>Page 3 / 5</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 4: ANALYSE DE CHARGE & VALEUR -->
+        <div class="page">
+            <img th:if="${config.watermarkImage}" th:src="${config.watermarkImage}" class="watermark">
+            <div class="page-content">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-bold" style="color: var(--primary-color);">03 ANALYSE DE LA CHARGE</span>
+                    <span class="fw-bold small text-muted" th:text="${clientName}">Client</span>
+                </div>
+                <div class="header-line"></div>
+
+                <div class="section-header">
+                    <div class="section-number">04</div>
+                    <div>
+                        <h4 class="section-title">Répartition Stratégique</h4>
+                        <p class="section-subtitle">Valeur vs Support technique</p>
+                    </div>
+                </div>
+
+                <div class="row g-4" style="flex-grow: 1;">
+                    <div class="col-12">
+                        <div class="chart-card">
+                            <div class="chart-title">Répartition par Type d'Intervention (Détail)</div>
+                            <div style="height: 350px;"><canvas id="loadTypeChart"></canvas></div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="chart-card text-center">
+                            <div class="chart-title">Équilibre Valeur vs Support</div>
+                            <div style="height: 180px;"><canvas id="valSuppChart"></canvas></div>
+                            <p class="small text-muted italic mt-2" style="font-size: 0.7rem;">La Valeur représente l'évolution métier, le Support la continuité d'exploitation.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="footer-info d-flex justify-content-between">
+                    <span th:text="${config.companyName}">ACE3i AFRICA</span>
+                    <span>Page 4 / 5</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 5: SUIVI VERSION & FONCTIONNALITÉS (LA PARTIE COUPÉE) -->
+        <div class="page">
+            <img th:if="${config.watermarkImage}" th:src="${config.watermarkImage}" class="watermark">
+            <div class="page-content">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-bold" style="color: var(--primary-color);">04 SUIVI VERSION & FONCTIONNALITÉS</span>
+                    <span class="fw-bold small text-muted" th:text="${clientName}">Client</span>
+                </div>
+                <div class="header-line"></div>
+
+                <div class="section-header">
+                    <div class="section-number">05</div>
+                    <div>
+                        <h4 class="section-title">Conformité Applicative</h4>
+                        <p class="section-subtitle">État du parc et fonctionnalités spécifiques</p>
+                    </div>
+                </div>
+
+                <div class="card-stat border-0 bg-light mb-4 py-4">
+                    <div class="row text-center g-0">
+                        <div class="col-3 border-end"><div class="kpi-label">Version</div><div class="kpi-value text-dark" style="font-size: 1.2rem;" th:text="${currentVersion ?: 'N/A'}"></div></div>
+                        <div class="col-3 border-end"><div class="kpi-label">Conformité</div><div class="kpi-value text-success" style="font-size: 1.2rem;" th:text="${complianceScore ?: 0} + '%'"></div></div>
+                        <div class="col-3 border-end"><div class="kpi-label">Globales</div><div class="kpi-value text-dark" style="font-size: 1.2rem;" th:text="${globalCount ?: 0}"></div></div>
+                        <div class="col-3"><div class="kpi-label">Spécifiques</div><div class="kpi-value text-info" style="font-size: 1.2rem;" th:text="${specificCount ?: 0}"></div></div>
+                    </div>
+                </div>
+
+                <div class="row g-4" style="flex-grow: 1;">
+                    <div class="col-6">
+                        <div class="card-stat h-100" style="background: #fff5f5; border-color: #ffd8d8;">
+                            <h6 class="text-danger fw-bold small text-uppercase mb-3" style="font-size: 0.8rem; letter-spacing: 1px;"><i class="fas fa-exclamation-triangle me-2"></i>Fonctionnalités Manquantes</h6>
+                            <ul class="feature-list">
+                                <li th:each="f : ${missingFeatures}" th:text="${f}"></li>
+                                <li th:if="${#lists.isEmpty(missingFeatures)}" class="text-muted italic">Aucune fonctionnalité manquante détectée.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card-stat h-100" style="background: #f0f7ff; border-color: #d1e6ff;">
+                            <h6 class="text-primary fw-bold small text-uppercase mb-3" style="font-size: 0.8rem; letter-spacing: 1px;"><i class="fas fa-star me-2"></i>Spécificités Client</h6>
+                            <ul class="feature-list">
+                                <li th:each="f : ${newFeatures}" th:text="${f}"></li>
+                                <li th:if="${#lists.isEmpty(newFeatures)}" class="text-muted italic">Aucune spécificité enregistrée.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="footer-info d-flex justify-content-between">
+                    <span th:text="${config.companyName}">ACE3i AFRICA</span>
+                    <span>Page 5 / 5</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 6: HISTORIQUE & SIGNATURES -->
+        <div class="page">
+            <img th:if="${config.watermarkImage}" th:src="${config.watermarkImage}" class="watermark">
+            <div class="page-content">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-bold" style="color: var(--primary-color);">05 DÉTAILS & VALIDATION</span>
+                    <span class="fw-bold small text-muted" th:text="${generationDate}">Date</span>
+                </div>
+                <div class="header-line"></div>
+
+                <div class="section-header">
+                    <div class="section-number">06</div>
+                    <div>
+                        <h4 class="section-title">Historique des Travaux</h4>
+                        <p class="section-subtitle">Détail chronologique des interventions</p>
+                    </div>
+                </div>
+
+                <div style="flex-grow: 1; overflow: hidden;">
+                    <table class="table table-sm table-modern table-striped border">
+                        <thead>
+                            <tr>
+                                <th style="width: 15%">Date</th>
+                                <th style="width: 20%">Projet</th>
+                                <th style="width: 50%">Description des Travaux</th>
+                                <th style="width: 15%">Expert</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="m : ${missions}">
+                                <td th:text="${#strings.substring(m.startDate,0,10)}"></td>
+                                <td class="fw-bold text-primary" th:text="${m.projectName}"></td>
+                                <td th:text="${m.description}"></td>
+                                <td th:text="${m.intervener}"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-4 pt-3 border-top">
+                    <div class="row g-4">
+                        <div class="col-7">
+                            <h6 class="fw-bold small text-uppercase mb-2">Observations ACE3i</h6>
+                            <div class="card-stat bg-light italic small text-muted" style="min-height: 120px; border-style: dashed;">
+                                Synthèse finale et recommandations techniques...
+                            </div>
+                        </div>
+                        <div class="col-5">
+                            <h6 class="fw-bold small text-uppercase mb-2 text-center">Visas & Signatures</h6>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <div class="card-stat text-center" style="height: 100px; display: flex; flex-direction: column; justify-content: space-between;">
+                                        <span class="kpi-label" style="font-size: 0.5rem;">ACE3i AFRICA</span>
+                                        <div style="border-top: 1px solid #eee; padding-top: 5px; font-size: 0.5rem;">Cachet</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="card-stat text-center" style="height: 100px; display: flex; flex-direction: column; justify-content: space-between;">
+                                        <span class="kpi-label" style="font-size: 0.5rem;">CLIENT</span>
+                                        <div style="border-top: 1px solid #eee; padding-top: 5px; font-size: 0.5rem;">Visa</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="footer-info mt-4 d-flex justify-content-between">
+                    <span th:text="${config.address}">Lomé, Togo</span>
+                    <span>Page 6 / 6</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            const missions = [[${missions}]];
+            const startDateStr = [[${startDate}]];
+            const endDateStr = [[${endDate}]];
+
+            Chart.defaults.font.size = 10;
+            Chart.defaults.color = '#858796';
+
+            // 1. TIMELINE
+            const grid = document.getElementById('timelineGrid');
+            const start = new Date(startDateStr);
+            const end = new Date(endDateStr);
+            const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+            for(let i=0; i<diffDays; i++) {
+                const current = new Date(start);
+                current.setDate(start.getDate() + i);
+                const isoDate = current.toISOString().split('T')[0];
+                const count = missions.filter(m => m.startDate.startsWith(isoDate)).length;
+                const box = document.createElement('div');
+                box.className = 'day-box' + (count > 1 ? ' day-high' : (count === 1 ? ' day-active' : ''));
+                grid.appendChild(box);
+            }
+
+            // 2. STATS CALCULATION
+            let totalDays = 0;
+            const projectData = {};
+            const intervenerData = {};
+            const monthlyData = {};
+            const statusData = { "Terminée": 0, "En cours": 0, "Planifiée": 0 };
+            const typeStats = { "Analyse": 0, "Formation": 0, "Maintenance": 0, "Programmation": 0, "Assistance": 0, "Installation": 0, "Mise en Prod.": 0, "Suivi Projet": 0 };
+            const valSuppData = { value: 0, support: 0 };
+            
+            missions.forEach(m => {
+                const d = 1; totalDays += d;
+                projectData[m.projectName] = (projectData[m.projectName] || 0) + d;
+                intervenerData[m.intervener] = (intervenerData[m.intervener] || 0) + 1;
+                
+                const month = m.startDate.substring(0, 7);
+                monthlyData[month] = (monthlyData[month] || 0) + d;
+
+                const status = m.status || 'Planifiée';
+                if(statusData[status] !== undefined) statusData[status] += d;
+
+                if (m.typeAnalyse) typeStats["Analyse"] += d;
+                if (m.typeFormation) typeStats["Formation"] += d;
+                if (m.typeMaintenance) typeStats["Maintenance"] += d;
+                if (m.typeProgrammation) typeStats["Programmation"] += d;
+                if (m.typeAssistance) typeStats["Assistance"] += d;
+                if (m.typeInstallation) typeStats["Installation"] += d;
+                if (m.typeMiseEnProduction) typeStats["Mise en Prod."] += d;
+                if (m.typeSuiviProjet) typeStats["Suivi Projet"] += d;
+                
+                if (m.typeEvolution || m.typeAnalyse || m.typeProgrammation || m.typeInstallation || m.typeMiseEnProduction || m.typeFormation || m.typeSuiviProjet) {
+                    valSuppData.value += d;
+                } else {
+                    valSuppData.support += d;
+                }
+            });
+
+            document.getElementById('totalDaysLabel').innerText = totalDays.toFixed(1);
+            const topInt = Object.entries(intervenerData).sort((a,b) => b[1]-a[1])[0];
+            document.getElementById('topIntervenerLabel').innerText = topInt ? topInt[0] : 'N/A';
+
+            // 3. TOP PROJECTS
+            const projectContainer = document.getElementById('projectBarsContainer');
+            const sortedProjects = Object.entries(projectData).sort((a,b) => b[1]-a[1]).slice(0, 6);
+            const maxProj = sortedProjects.length > 0 ? sortedProjects[0][1] : 1;
+
+            sortedProjects.forEach(([name, val]) => {
+                const width = (val / maxProj * 100);
+                const row = document.createElement('div');
+                row.className = 'mb-4';
+                row.innerHTML = `
+                    <div class="d-flex justify-content-between small fw-bold mb-2">
+                        <span class="text-dark" style="font-size: 0.9rem;">${name}</span>
+                        <span class="text-primary" style="font-size: 0.9rem;">${val.toFixed(1)} Jours</span>
+                    </div>
+                    <div class="progress-modern" style="height: 12px;"><div class="progress-bar" style="width: ${width}%; background: var(--secondary-color);"></div></div>
+                `;
+                projectContainer.appendChild(row);
+            });
+
+            // 4. CHARTS
+            new Chart(document.getElementById('trendChart'), {
+                type: 'bar',
+                data: { labels: Object.keys(monthlyData), datasets: [{ label: 'Volume', data: Object.values(monthlyData), backgroundColor: '#4e73df', borderRadius: 5 }] },
+                options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+
+            new Chart(document.getElementById('typeDistChart'), {
+                type: 'pie',
+                data: { labels: Object.keys(typeStats).filter(k => typeStats[k]>0), datasets: [{ data: Object.values(typeStats).filter(v => v>0), backgroundColor: ['#ee7725', '#67bed9', '#1cc88a', '#f6c23e', '#e74a3b', '#4e73df', '#36b9cc', '#858796'] }] },
+                options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } } } }
+            });
+
+            new Chart(document.getElementById('statusChart'), {
+                type: 'doughnut',
+                data: { labels: Object.keys(statusData), datasets: [{ data: Object.values(statusData), backgroundColor: ['#28a745', '#ffc107', '#dc3545'] }] },
+                options: { maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 10 } } } }
+            });
+
+            new Chart(document.getElementById('loadTypeChart'), {
+                type: 'bar',
+                data: { labels: Object.keys(typeStats), datasets: [{ label: 'Jours Consommés', data: Object.values(typeStats), backgroundColor: '#ee7725', borderRadius: 4 }] },
+                options: { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } } } }
+            });
+
+            new Chart(document.getElementById('valSuppChart'), {
+                type: 'doughnut',
+                data: { labels: ['Valeur (Evolution)', 'Support (Continuité)'], datasets: [{ data: [valSuppData.value, valSuppData.support], backgroundColor: ['#28a745', '#ffc107'], borderWidth: 0 }] },
+                options: { maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
+            });
+        });
+    </script>
+</body>
+</html>

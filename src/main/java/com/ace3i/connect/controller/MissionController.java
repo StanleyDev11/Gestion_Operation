@@ -37,6 +37,9 @@ public class MissionController {
     @Autowired
     private com.ace3i.connect.repository.ClientRepository clientRepository;
 
+    @Autowired
+    private com.ace3i.connect.repository.AppConfigRepository configRepository;
+
     @GetMapping("/")
     public String index(Authentication authentication) {
         if (authentication != null && authentication.getAuthorities().stream()
@@ -308,6 +311,76 @@ public class MissionController {
                     }
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/missions/report/preview")
+    public String previewPeriodicReport(@RequestParam String clientName,
+                                       @RequestParam String startDate,
+                                       @RequestParam String endDate,
+                                       Model model) {
+        java.time.LocalDateTime start = java.time.LocalDate.parse(startDate).atStartOfDay();
+        java.time.LocalDateTime end = java.time.LocalDate.parse(endDate).atTime(23, 59, 59);
+        
+        List<Mission> missions = missionService.getMissionsByClientAndPeriod(clientName, start, end);
+        
+        // Données simplifiées pour les graphiques du rapport
+        List<Map<String, Object>> simplifiedMissions = missions.stream()
+                .map(m -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("startDate", m.getStartDate().toString());
+                    map.put("endDate", m.getEndDate().toString());
+                    map.put("status", m.getStatus());
+                    map.put("typeIncident", m.getTypeIncident());
+                    map.put("typeCorrectif", m.getTypeCorrectif());
+                    map.put("typeEvolution", m.getTypeEvolution());
+                    map.put("typeSupport", m.getTypeSupport());
+                    map.put("typeAnalyse", m.isTypeAnalyse());
+                    map.put("typeFormation", m.isTypeFormation());
+                    map.put("typeMaintenance", m.isTypeMaintenance());
+                    map.put("typeProgrammation", m.isTypeProgrammation());
+                    map.put("typeAssistance", m.isTypeAssistance());
+                    map.put("typeInstallation", m.isTypeInstallation());
+                    map.put("typeMiseEnProduction", m.isTypeMiseEnProduction());
+                    map.put("typeSuiviProjet", m.isTypeSuiviProjet());
+                    map.put("projectName", m.getProjectName());
+                    map.put("intervener", m.getIntervener());
+                    map.put("description", m.getDescription());
+                    return map;
+                })
+                .collect(Collectors.toList());
+
+        model.addAttribute("missions", simplifiedMissions);
+        model.addAttribute("clientName", clientName);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+        model.addAttribute("generationDate", LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+        
+        // Ajouter la configuration globale (Logos, Filigrane)
+        model.addAttribute("config", configRepository.findById(1L).orElse(new com.ace3i.connect.entity.AppConfig()));
+        
+        // Récupérer le suivi de version pour ce client spécifique
+        clientRepository.findAll().stream()
+                .filter(c -> c.getName().equalsIgnoreCase(clientName))
+                .findFirst()
+                .ifPresent(client -> {
+                    Long clientId = client.getId();
+                    model.addAttribute("complianceScore", clientFeatureTrackingService.getClientComplianceScores().get(clientId));
+                    clientFeatureTrackingService.getCurrentDeploymentForClient(clientId)
+                            .ifPresent(d -> model.addAttribute("currentVersion", d.getApplicationVersion().getVersionNumber()));
+                    
+                    // Détails des fonctionnalités pour le tableau de suivi
+                    Map<String, List<String>> missingAndNew = clientFeatureTrackingService.getMissingAndNewFeaturesForClient(clientId);
+                    model.addAttribute("missingFeatures", missingAndNew.get("missing"));
+                    model.addAttribute("newFeatures", missingAndNew.get("new"));
+                    
+                    // Statistiques globales de déploiement
+                    List<com.ace3i.connect.entity.ClientDeploymentFeature> cdfs = clientFeatureTrackingService.getDeploymentFeaturesForClient(clientId);
+                    long specificCount = cdfs.stream().filter(f -> Boolean.TRUE.equals(f.getClientSpecific())).count();
+                    model.addAttribute("specificCount", specificCount);
+                    model.addAttribute("globalCount", cdfs.size() - specificCount);
+                });
+
+        return "report-preview";
     }
 
     @GetMapping("/missions/report")

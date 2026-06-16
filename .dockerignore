@@ -1,0 +1,13 @@
+target/
+*.class
+.idea/
+.mvn/
+mvnw
+mvnw.cmd
+.git/
+.dockerignore
+Dockerfile
+README.md
+*.xlsx
+*.png
+*.txt
