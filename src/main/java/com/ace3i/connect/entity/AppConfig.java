@@ -59,4 +59,17 @@ public class AppConfig {
 
     @Column(name = "CFGSMT_S")
     private Boolean smtpStartTls = true;
+
+    // Configuration Dépôt Git (GitLab Interne)
+    @Column(name = "CFGGL_U")
+    private String gitlabUrl; // Ex: http://gitlab.ace3i.local ou http://192.168.1.50:8080
+
+    @Column(name = "CFGGL_T")
+    private String gitlabToken; // Personal ou Project Access Token (read_api)
+
+    @Column(name = "CFGGL_P")
+    private String gitlabProjectId; // ID numérique ou chemin (ex: 8 ou ace3i/core-banking)
+
+    @Column(name = "CFGGL_B")
+    private String gitlabDefaultBranch = "master"; // Branche socle par défaut
 }

@@ -27,7 +27,7 @@
                                     <label class="form-label fw-bold small text-muted text-uppercase">1. Client (Banque)</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-light border-0"><i class="fas fa-building text-primary"></i></span>
-                                        <select name="clientName" class="form-select border-0 bg-light shadow-sm" required style="height: 50px;">
+                                        <select id="clientName" name="clientName" class="form-select border-0 bg-light shadow-sm" required style="height: 50px;">
                                             <option value="">-- Choisir une banque --</option>
                                             <option th:each="c : ${clients}" th:value="${c.name}" th:text="${c.name}">Banque</option>
                                         </select>
@@ -39,14 +39,14 @@
                                     <label class="form-label fw-bold small text-muted text-uppercase">2. Date de début</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-light border-0"><i class="fas fa-calendar-alt text-primary"></i></span>
-                                        <input type="date" name="startDate" class="form-control border-0 bg-light shadow-sm" required style="height: 50px;">
+                                        <input type="date" id="startDate" name="startDate" class="form-control border-0 bg-light shadow-sm" required style="height: 50px;">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small text-muted text-uppercase">3. Date de fin</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-light border-0"><i class="fas fa-calendar-check text-primary"></i></span>
-                                        <input type="date" name="endDate" class="form-control border-0 bg-light shadow-sm" required style="height: 50px;">
+                                        <input type="date" id="endDate" name="endDate" class="form-control border-0 bg-light shadow-sm" required style="height: 50px;">
                                     </div>
                                 </div>
 
@@ -59,9 +59,12 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-12 text-center mt-4">
+                                <div class="col-md-12 text-center mt-4 d-flex justify-content-center gap-3">
                                     <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill shadow">
                                         <i class="fas fa-file-pdf me-2"></i> Générer le Rapport PDF
+                                    </button>
+                                    <button type="button" class="btn btn-outline-info btn-lg px-5 rounded-pill shadow" onclick="previewHtmlReport()">
+                                        <i class="fas fa-eye me-2"></i> Prévisualiser le Rapport Web
                                     </button>
                                 </div>
                             </div>
@@ -71,6 +74,27 @@
             </div>
         </div>
     </main>
+
+    <script>
+        function previewHtmlReport() {
+            const clientName = document.getElementById('clientName').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            if (!clientName || !startDate || !endDate) {
+                Swal.fire({
+                    title: 'Champs manquants',
+                    text: 'Veuillez sélectionner un client et définir une période complète.',
+                    icon: 'warning',
+                    confirmButtonColor: '#4e73df'
+                });
+                return;
+            }
+            
+            const url = `/missions/report/preview?clientName=${encodeURIComponent(clientName)}&startDate=${startDate}&endDate=${endDate}`;
+            window.open(url, '_blank');
+        }
+    </script>
 
     <div th:replace="~{layout :: scripts}"></div>
 </body>

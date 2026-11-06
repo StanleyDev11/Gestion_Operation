@@ -6,6 +6,6 @@ spring:
       token: ${VAULT_TOKEN}
       uri: ${VAULT_ADDR}
       kv:
-        enabled: true
-      enabled: true
+        enabled: false
+      enabled: false
       fail-fast: false  # true = le service ne démarre pas tant que Vault n’est pas joignable (plus sûr pour éviter la connexion au YAML de secours).

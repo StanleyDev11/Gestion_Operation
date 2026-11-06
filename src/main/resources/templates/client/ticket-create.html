@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Nouveau Ticket de Support')}"></head>
+<body>
+
+    <div th:replace="~{layout :: sidebar('client-tickets-new')}"></div>
+    <div th:replace="~{layout :: header('Nouveau Ticket de Support')}"></div>
+
+    <main class="main-content">
+        <div class="row justify-content-center">
+            <div class="col-lg-9">
+                <div class="card card-custom border-0 shadow-sm">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h5 class="mb-0 fw-bold text-primary">
+                                    <i class="fas fa-ticket-alt me-2"></i>Déclarer un Ticket de Support
+                                </h5>
+                                <span class="small text-muted" th:text="'Client émetteur : ' + ${client.name}">Client</span>
+                            </div>
+                            <span class="badge bg-light text-muted border">Support Technique ACE3i</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body p-4">
+                        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i><span th:text="${error}">Erreur</span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+
+                        <form id="ticketCreateForm" th:action="@{/client/tickets/save}" th:object="${ticket}" method="post" enctype="multipart/form-data">
+                            <div class="row g-4">
+
+                                <!-- 1. Type de ticket -->
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small text-muted text-uppercase">1. Type de ticket <span class="text-danger">*</span></label>
+                                    <div class="d-flex gap-3">
+                                        <div class="form-check form-check-inline border rounded-3 p-3 flex-fill ticket-type-option" id="opt-incident">
+                                            <input class="form-check-input" type="radio" name="ticketType" id="typeIncident"
+                                                   value="INCIDENT" checked
+                                                   onchange="updateTicketTypeStyle()">
+                                            <label class="form-check-label d-flex align-items-center gap-2 w-100 cursor-pointer" for="typeIncident">
+                                                <i class="fas fa-exclamation-triangle text-danger fa-lg"></i>
+                                                <div>
+                                                    <div class="fw-bold">Incident Technique</div>
+                                                    <div class="text-muted small">Anomalie, panne ou erreur sur un service en production.</div>
+                                                </div>
+                                            </label>
+                                        </div>
+                                        <div class="form-check form-check-inline border rounded-3 p-3 flex-fill ticket-type-option" id="opt-demande">
+                                            <input class="form-check-input" type="radio" name="ticketType" id="typeDemande"
+                                                   value="DEMANDE"
+                                                   onchange="updateTicketTypeStyle()">
+                                            <label class="form-check-label d-flex align-items-center gap-2 w-100 cursor-pointer" for="typeDemande">
+                                                <i class="fas fa-clipboard-list text-primary fa-lg"></i>
+                                                <div>
+                                                    <div class="fw-bold">Demande de Service</div>
+                                                    <div class="text-muted small">Nouvelle fonctionnalité, paramétrage ou demande d'information.</div>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 2. Titre / Sujet -->
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small text-muted text-uppercase">2. Objet <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="fas fa-heading text-primary"></i></span>
+                                        <input type="text" th:field="*{title}" class="form-control border-0 bg-light shadow-sm" 
+                                               placeholder="Ex: Échec de génération des fichiers de compensation / Demande de paramétrage..." required style="height: 50px;">
+                                    </div>
+                                    <div class="form-text small">Indiquez un résumé clair et concis.</div>
+                                </div>
+
+                                <!-- 3. Application concernée (dynamique) -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small text-muted text-uppercase">3. Application / Module <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="fas fa-cubes text-primary"></i></span>
+                                        <select th:field="*{applicationName}" class="form-select border-0 bg-light shadow-sm" required style="height: 50px;">
+                                            <option value="">-- Sélectionner le module --</option>
+                                            <option th:each="cat : ${categories}" th:value="${cat.name}" th:text="${cat.name}">Module</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- 4. Degré d'urgence -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small text-muted text-uppercase">4. Degré d'urgence <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="fas fa-tachometer-alt text-primary"></i></span>
+                                        <select th:field="*{urgency}" class="form-select border-0 bg-light shadow-sm" required style="height: 50px;">
+                                            <option value="FAIBLE">🟢 Faible (Gêne mineure, contournement possible)</option>
+                                            <option value="NORMALE" selected>🔵 Normale (Impact modéré sur les opérations)</option>
+                                            <option value="URGENTE">🟡 Urgente (Service dégradé pour plusieurs utilisateurs)</option>
+                                            <option value="BLOQUANTE">🔴 Bloquante (Arrêt total du service / Impact critique)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- 5. Description détaillée -->
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small text-muted text-uppercase">5. Description détaillée <span class="text-danger">*</span></label>
+                                    <textarea th:field="*{description}" class="form-control border-0 bg-light shadow-sm" rows="6" 
+                                              placeholder="Précisez les étapes pour reproduire l'erreur, les messages affichés à l'écran, les numéros de comptes/transactions impactés, etc." required></textarea>
+                                </div>
+
+                                <!-- 6. Pièces jointes -->
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small text-muted text-uppercase">6. Pièces jointes (Captures d'écran, logs d'erreur)</label>
+                                    <div class="border rounded-3 p-3 bg-light">
+                                        <input type="file" name="files" class="form-control" multiple accept="image/*,.pdf,.txt,.log,.zip">
+                                        <div class="form-text small mt-2">
+                                            <i class="fas fa-info-circle me-1"></i> Formats acceptés : Images (PNG, JPG), PDF, Logs TXT, ZIP. Taille maximale par fichier : 500 Mo.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="col-md-12 text-center mt-4 d-flex justify-content-center gap-3">
+                                    <a th:href="@{/client/tickets}" class="btn btn-outline-secondary btn-lg px-4 rounded-pill">
+                                        Annuler
+                                    </a>
+                                    <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill shadow">
+                                        <i class="fas fa-paper-plane me-2"></i> Envoyer au Support
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div th:replace="~{layout :: scripts}"></div>
+    <script>
+        function updateTicketTypeStyle() {
+            const incident = document.getElementById('typeIncident');
+            const optIncident = document.getElementById('opt-incident');
+            const optDemande = document.getElementById('opt-demande');
+            if (incident.checked) {
+                optIncident.classList.add('border-danger', 'bg-danger-subtle');
+                optIncident.classList.remove('border-primary', 'bg-primary-subtle');
+                optDemande.classList.remove('border-primary', 'bg-primary-subtle', 'border-danger', 'bg-danger-subtle');
+            } else {
+                optDemande.classList.add('border-primary', 'bg-primary-subtle');
+                optDemande.classList.remove('border-danger', 'bg-danger-subtle');
+                optIncident.classList.remove('border-danger', 'bg-danger-subtle', 'border-primary', 'bg-primary-subtle');
+            }
+        }
+        // Init au chargement
+        updateTicketTypeStyle();
+
+        // SweetAlert2 sur soumission
+        const form = document.getElementById('ticketCreateForm');
+        if (form) {
+            form.addEventListener('submit', function() {
+                if (window.Swal) {
+                    Swal.fire({
+                        title: 'Envoi en cours...',
+                        text: 'Veuillez patienter pendant le transfert des données et des pièces jointes.',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>

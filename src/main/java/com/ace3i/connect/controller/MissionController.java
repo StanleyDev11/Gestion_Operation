@@ -40,12 +40,19 @@ public class MissionController {
     @Autowired
     private com.ace3i.connect.repository.AppConfigRepository configRepository;
 
+    @Autowired
+    private com.ace3i.connect.service.ITicketService ticketService;
+
     @GetMapping("/")
     public String index(Authentication authentication) {
-        if (authentication != null && authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
-            auditLogService.log("Accès Dashboard", "L'administrateur a accédé au tableau de bord.");
-            return "redirect:/dashboard";
+        if (authentication != null) {
+            if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_CLIENT"))) {
+                return "redirect:/client/tickets";
+            }
+            if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+                auditLogService.log("Accès Dashboard", "L'administrateur a accédé au tableau de bord.");
+                return "redirect:/dashboard";
+            }
         }
         return "redirect:/missions";
     }
@@ -161,6 +168,9 @@ public class MissionController {
         model.addAttribute("featureGlobalKPIs", clientFeatureTrackingService.getGlobalKPIs());
         model.addAttribute("featureTotalCount", clientFeatureTrackingService.getAllFeatures().size());
 
+        // KPIs et données analytiques des Incidents Clients
+        model.addAttribute("incidentStats", ticketService.getDashboardIncidentStats());
+
         return "dashboard";
     }
 
@@ -204,7 +214,24 @@ public class MissionController {
 
     @GetMapping("/missions/new")
     public String showCreateForm(Model model) {
-        model.addAttribute("mission", new Mission());
+        Mission mission = new Mission();
+        if (model.containsAttribute("prefillClient")) {
+            mission.setClientName((String) model.getAttribute("prefillClient"));
+            mission.setProjectName((String) model.getAttribute("prefillProject"));
+            mission.setOrderNumber((String) model.getAttribute("prefillOrderNumber"));
+            mission.setIntervener((String) model.getAttribute("prefillIntervener"));
+            mission.setClientIntervener((String) model.getAttribute("prefillClientContact"));
+            mission.setProblemDescription((String) model.getAttribute("prefillProblem"));
+            mission.setRootCause((String) model.getAttribute("prefillRootCause"));
+            mission.setSolutionProcedure((String) model.getAttribute("prefillSolution"));
+            mission.setDescription((String) model.getAttribute("prefillSolution"));
+            mission.setTypeIncident(true);
+            mission.setStatus("Terminée");
+            mission.setStartDate(LocalDateTime.now().minusHours(2));
+            mission.setEndDate(LocalDateTime.now());
+        }
+
+        model.addAttribute("mission", mission);
         
         List<com.ace3i.connect.entity.Client> allClients = clientRepository.findAll();
         model.addAttribute("clients", allClients.stream()

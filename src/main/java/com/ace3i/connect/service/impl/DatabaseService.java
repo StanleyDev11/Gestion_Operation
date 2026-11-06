@@ -18,7 +18,8 @@ public class DatabaseService implements IDatabaseService {
 
     private static final String[] TABLES = {
             "CNCFG", "CNUSE", "CNCLI", "CNINT", "CNMIS", "CNNOT", "CNAUD",
-            "CNAPPVERSION", "CNFEATURE", "CNDEPLOYMENT", "CNDEPLOYMENT_FEATURE"
+            "CNAPPVERSION", "CNFEATURE", "CNDEPLOYMENT", "CNDEPLOYMENT_FEATURE",
+            "CNTKT", "CNTCM", "CNTAT", "CNTCA"
     };
 
     @Override

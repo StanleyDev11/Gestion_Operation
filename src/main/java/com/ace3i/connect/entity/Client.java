@@ -21,6 +21,9 @@ public class Client {
     @Column(name = "CLINAM")
     private String name;
 
+    @Column(name = "CLIBRA")
+    private String gitBranch; // Branche Git associée (ex: "client/sunu" ou "sunu")
+
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true)
     @com.fasterxml.jackson.annotation.JsonManagedReference
     private List<Intervener> interveners;

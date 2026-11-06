@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <!-- Fragment: HEAD (Styles et Meta) -->
@@ -278,28 +278,44 @@
             </a>
         </div>
         <div class="nav-menu">
-            <a th:href="@{/dashboard}" class="nav-item" th:classappend="${activePage == 'dashboard' ? 'active' : ''}" sec:authorize="hasRole('ADMIN')">
-                <i class="fas fa-chart-pie"></i> Tableau de Bord
-            </a>
-            <a th:href="@{/missions}" class="nav-item" th:classappend="${activePage == 'missions' ? 'active' : ''}">
-                <i class="fas fa-tasks"></i> Interventions
-            </a>
-            <div class="nav-dropdown">
-                <a href="javascript:void(0)" class="nav-item" th:classappend="${activePage == 'reports' || activePage == 'calendar' ? 'active' : ''}">
-                    <i class="fas fa-file-invoice"></i> Rapports
+            <!-- SECTION CLIENT (Cloisonné) -->
+            <div sec:authorize="hasRole('CLIENT')">
+                <a th:href="@{/client/tickets}" class="nav-item" th:classappend="${activePage == 'client-tickets' ? 'active' : ''}">
+                    <i class="fas fa-ticket-alt"></i> Mes Incidents
                 </a>
-                <div class="flyout-menu">
-                    <a th:href="@{/reports}" class="flyout-item">
-                        <i class="fas fa-file-invoice me-2"></i> Rapports
-                    </a>
-                    <a th:href="@{/missions/calendar}" class="flyout-item">
-                        <i class="fas fa-calendar-alt me-2"></i> Planning
-                    </a>
-                </div>
+                <a th:href="@{/client/tickets/new}" class="nav-item" th:classappend="${activePage == 'client-tickets-new' ? 'active' : ''}">
+                    <i class="fas fa-plus-circle"></i> Déclarer Incident
+                </a>
             </div>
-            <a th:href="@{/missions/new}" class="nav-item" th:classappend="${activePage == 'new-mission' ? 'active' : ''}">
-                <i class="fas fa-plus-square"></i> Nouveau Rapport
-            </a>
+
+            <!-- SECTION PERSONNEL ACE3I -->
+            <div sec:authorize="hasAnyRole('ADMIN', 'TECHNICIAN')">
+                <a th:href="@{/dashboard}" class="nav-item" th:classappend="${activePage == 'dashboard' ? 'active' : ''}" sec:authorize="hasRole('ADMIN')">
+                    <i class="fas fa-chart-pie"></i> Tableau de Bord
+                </a>
+                <a th:href="@{/tickets}" class="nav-item" th:classappend="${activePage == 'tickets' ? 'active' : ''}">
+                    <i class="fas fa-headset"></i> Incidents Clients
+                </a>
+                <a th:href="@{/missions}" class="nav-item" th:classappend="${activePage == 'missions' ? 'active' : ''}">
+                    <i class="fas fa-tasks"></i> Interventions
+                </a>
+                <div class="nav-dropdown">
+                    <a href="javascript:void(0)" class="nav-item" th:classappend="${activePage == 'reports' || activePage == 'calendar' ? 'active' : ''}">
+                        <i class="fas fa-file-invoice"></i> Rapports
+                    </a>
+                    <div class="flyout-menu">
+                        <a th:href="@{/missions/report}" class="flyout-item">
+                            <i class="fas fa-file-invoice me-2"></i> Rapports
+                        </a>
+                        <a th:href="@{/missions/calendar}" class="flyout-item">
+                            <i class="fas fa-calendar-alt me-2"></i> Planning
+                        </a>
+                    </div>
+                </div>
+                <a th:href="@{/missions/new}" class="nav-item" th:classappend="${activePage == 'new-mission' ? 'active' : ''}">
+                    <i class="fas fa-plus-square"></i> Nouveau Rapport
+                </a>
+            </div>
             
             <div sec:authorize="hasRole('ADMIN')">
                 <div class="nav-dropdown">
@@ -330,7 +346,9 @@
                         <a th:href="@{/settings/banks}" class="flyout-item">
                             <i class="fas fa-university me-2"></i> Banques & Clients
                         </a>
-                    </div>
+                            <a th:href="@{/settings/ticket-categories}" class="flyout-item">
+                                <i class="fas fa-tags me-2"></i> Modules &amp; Cat&eacute;gories
+                            </a>                    </div>
                 </div>
 
                 <a th:href="@{/admin/users}" class="nav-item" th:classappend="${activePage == 'users' ? 'active' : ''}">
@@ -383,7 +401,10 @@
 
         <div class="header-right d-flex align-items-center gap-3">
             <!-- 2. Action Rapide -->
-            <a th:href="@{/missions/new}" class="btn-quick-add" title="Nouvelle mission">
+            <a th:href="@{/client/tickets/new}" class="btn-quick-add" title="Déclarer un incident" sec:authorize="hasRole('CLIENT')">
+                <i class="fas fa-plus"></i>
+            </a>
+            <a th:href="@{/missions/new}" class="btn-quick-add" title="Nouvelle mission" sec:authorize="hasAnyRole('ADMIN', 'TECHNICIAN')">
                 <i class="fas fa-plus"></i>
             </a>
 

@@ -61,6 +61,11 @@
                                                 <input type="text" th:field="*{name}" class="form-control border-0 shadow-sm" placeholder="Ex: SUNU, CORIS BANK..." required />
                                             </div>
                                             <div class="mb-3">
+                                                <label class="form-label small fw-bold text-muted">BRANCHE GIT (GITLAB)</label>
+                                                <input type="text" th:field="*{gitBranch}" class="form-control border-0 shadow-sm" placeholder="Ex: client/sunu ou sunu" />
+                                                <div class="form-text small">Nom de la branche dédiée dans votre dépôt GitLab.</div>
+                                            </div>
+                                            <div class="mb-3">
                                                 <label class="form-label small fw-bold text-muted">INTERVENANTS</label>
                                                 <textarea name="intervenerNames" class="form-control border-0 shadow-sm" rows="3" placeholder="Séparez les noms par une virgule (ex: Jean Luc, Alice...)"></textarea>
                                             </div>
@@ -85,6 +90,7 @@
                                                 <thead class="bg-light">
                                                     <tr>
                                                         <th class="ps-4 border-0 py-3 text-muted small fw-bold">BANQUE</th>
+                                                        <th class="border-0 py-3 text-muted small fw-bold">BRANCHE GIT</th>
                                                         <th class="border-0 py-3 text-muted small fw-bold">INTERVENANTS & AJOUT RAPIDE</th>
                                                         <th class="text-end pe-4 border-0 py-3 text-muted small fw-bold">ACTION</th>
                                                     </tr>
@@ -93,6 +99,23 @@
                                                     <tr th:each="client : ${clients}">
                                                         <td class="ps-4">
                                                             <div class="fw-bold text-dark fs-6" th:text="${client.name}">Nom Banque</div>
+                                                        </td>
+                                                        <td>
+                                                            <form th:action="@{/settings/clients/update-branch}" method="post" class="d-flex align-items-center gap-1">
+                                                                <input type="hidden" name="clientId" th:value="${client.id}" />
+                                                                <div class="input-group input-group-sm" style="max-width: 180px;">
+                                                                    <span class="input-group-text bg-white px-2"><i class="fas fa-code-branch text-muted small"></i></span>
+                                                                    <input type="text" name="gitBranch" class="form-control" th:value="${client.gitBranch}" placeholder="Ex: sunu" />
+                                                                    <button type="submit" class="btn btn-outline-secondary" title="Enregistrer la branche"><i class="fas fa-check"></i></button>
+                                                                </div>
+                                                                <button th:if="${client.gitBranch != null and !client.gitBranch.isBlank()}" 
+                                                                        type="button" 
+                                                                        class="btn btn-sm btn-outline-primary ms-1 sync-bank-btn" 
+                                                                        th:attr="data-client-id=${client.id},data-client-name=${client.name}"
+                                                                        title="Synchroniser avec GitLab">
+                                                                    <i class="fas fa-sync-alt"></i>
+                                                                </button>
+                                                            </form>
                                                         </td>
                                                         <td>
                                                             <div class="d-flex flex-wrap align-items-center gap-2">
@@ -123,7 +146,7 @@
                                                         </td>
                                                     </tr>
                                                     <tr th:if="${clients.empty}">
-                                                        <td colspan="3" class="text-center py-5 text-muted">
+                                                        <td colspan="4" class="text-center py-5 text-muted">
                                                             <i class="fas fa-info-circle fs-4 mb-2 d-block opacity-25"></i>
                                                             Aucune banque configurée.
                                                         </td>
@@ -148,6 +171,56 @@
     </main>
 
     <div th:replace="~{layout :: scripts}"></div>
+    
+    <script>
+        document.querySelectorAll('.sync-bank-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const clientId = this.getAttribute('data-client-id');
+                const clientName = this.getAttribute('data-client-name');
+                const originalHtml = this.innerHTML;
+                
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+                fetch('/settings/gitlab/sync/' + clientId, { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            let contentHtml = '<b>' + clientName + '</b> : ' + data.message;
+                            if (data.projects && data.projects.length > 0) {
+                                contentHtml += '<ul class="text-start mt-2 mb-0 small">';
+                                data.projects.forEach(p => {
+                                    contentHtml += '<li>📦 <b>' + p.projectName + '</b> : <code>' + p.versionNumber + '</code> (commit ' + p.commitSha + ')</li>';
+                                });
+                                contentHtml += '</ul>';
+                            }
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Synchronisation réussie',
+                                html: contentHtml
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Échec de synchronisation',
+                                text: data.message
+                            });
+                        }
+                    })
+                    .catch(err => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erreur',
+                            text: 'Impossible de contacter le serveur : ' + err.message
+                        });
+                    })
+                    .finally(() => {
+                        this.disabled = false;
+                        this.innerHTML = originalHtml;
+                    });
+            });
+        });
+    </script>
     
     <style>
         /* Style des Intervenants (Tags) */

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{layout :: head('Définir Version Maîtresse')}"></head>
+<body>
+
+    <div th:replace="~{layout :: sidebar('set-master-version')}"></div>
+    <div th:replace="~{layout :: header(|Définir la Version Maîtresse de l'Application|)}"></div>
+
+    <main class="main-content">
+        <div class="card card-custom mb-4 shadow-sm border-0">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Gestion de la Version Maîtresse</h5>
+                <div th:if="${currentMasterVersion}" class="alert alert-info">
+                    La version maîtresse actuelle est : <strong th:text="${currentMasterVersion}">1.0.0</strong>
+                </div>
+                <form th:action="@{/feature-tracking/set-master-version}" method="post">
+                    <div class="mb-3">
+                        <label for="versionNumber" class="form-label">Sélectionner la Version Maîtresse</label>
+                        <select id="versionNumber" name="versionNumber" class="form-select" required>
+                            <option value="">-- Choisir une version --</option>
+                            <option th:each="version : ${allApplicationVersions}"
+                                    th:value="${version.versionNumber}"
+                                    th:text="${version.versionNumber + (version.projectName != null ? ' [' + version.projectName + ']' : '') + (version.branchName != null ? ' - Branche: ' + version.branchName : '')}"
+                                    th:selected="${version.versionNumber == currentMasterVersion}"></option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Définir comme Maîtresse</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card card-custom mb-4 shadow-sm border-0" sec:authorize="hasRole('ADMIN')">
+            <div class="card-body">
+                <details>
+                    <summary class="text-muted small" style="cursor: pointer;">Options avancées</summary>
+                    <div class="mt-3 border-top pt-3">
+                        <p class="text-danger small mb-2">
+                            Zone sensible: supprime toutes les données de suivi fonctionnalités/version client.
+                        </p>
+                        <form id="clearFeatureTrackingForm" th:action="@{/feature-tracking/clear-all}" method="post">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="fas fa-trash-alt me-1"></i> Tout supprimer (base)
+                            </button>
+                        </form>
+                    </div>
+                </details>
+            </div>
+        </div>
+    </main>
+
+    <div th:replace="~{layout :: scripts}"></div>
+    <script>
+        (function () {
+            const clearForm = document.getElementById('clearFeatureTrackingForm');
+            if (!clearForm) return;
+
+            clearForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const finalSubmit = function () { clearForm.submit(); };
+                if (window.Swal) {
+                    Swal.fire({
+                        title: 'Suppression totale ?',
+                        text: 'Tu vas supprimer tous les deploiements, fonctionnalites et versions du module.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#dc3545',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Oui, continuer',
+                        cancelButtonText: 'Annuler'
+                    }).then(function (result) {
+                        if (!result.isConfirmed) return;
+                        Swal.fire({
+                            title: 'Confirmation finale',
+                            text: 'Cette action est irreversible. Confirmer la suppression globale ?',
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonColor: '#dc3545',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: 'Oui, tout supprimer',
+                            cancelButtonText: 'Annuler'
+                        }).then(function (finalResult) {
+                            if (finalResult.isConfirmed) {
+                                finalSubmit();
+                            }
+                        });
+                    });
+                    return;
+                }
+
+                if (confirm('Supprimer toutes les donnees de suivi fonctionnalites/version client ?')) {
+                    finalSubmit();
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Incident ' + ${ticket.ticketNumber})}"></head>
+<body>
+
+    <div th:replace="~{layout :: sidebar('client-tickets')}"></div>
+    <div th:replace="~{layout :: header('Suivi Incident - ' + ${ticket.ticketNumber})}"></div>
+
+    <main class="main-content">
+        <!-- En-tête du ticket -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <a th:href="@{/client/tickets}" class="btn btn-sm btn-outline-secondary mb-2 rounded-pill">
+                    <i class="fas fa-arrow-left me-1"></i> Retour à la liste
+                </a>
+                <h3 class="fw-bold mb-1">
+                    <span class="text-primary me-2" th:text="${ticket.ticketNumber}">INC-2026-0001</span>
+                    <span th:text="${ticket.title}">Titre de l'incident</span>
+                </h3>
+                <div class="text-muted small">
+                    Déclaré le <span th:text="${#temporals.format(ticket.createdAt, 'dd/MM/yyyy à HH:mm')}">Date</span>
+                    par <strong th:text="${ticket.createdBy.fullName}">Demandeur</strong>
+                    (<span th:text="${ticket.client.name}">Banque</span>)
+                </div>
+            </div>
+            <div class="d-flex flex-column align-items-end gap-2">
+                <!-- Badge Type -->
+                <span th:if="${ticket.ticketType == 'DEMANDE'}" class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2">
+                    <i class="fas fa-clipboard-list me-1"></i>Demande de Service
+                </span>
+                <span th:unless="${ticket.ticketType == 'DEMANDE'}" class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2">
+                    <i class="fas fa-exclamation-triangle me-1"></i>Incident Technique
+                </span>
+                <!-- Badge Statut -->
+                <span th:if="${ticket.status == 'NOUVEAU'}" class="badge bg-primary fs-6 px-3 py-2 rounded-pill shadow-sm">Nouveau</span>
+                <span th:if="${ticket.status == 'EN_COURS'}" class="badge bg-warning text-dark fs-6 px-3 py-2 rounded-pill shadow-sm">En cours de traitement</span>
+                <span th:if="${ticket.status == 'EN_ATTENTE'}" class="badge bg-secondary fs-6 px-3 py-2 rounded-pill shadow-sm">En attente</span>
+                <span th:if="${ticket.status == 'RESOLU'}" class="badge bg-success fs-6 px-3 py-2 rounded-pill shadow-sm">Résolu</span>
+                <span th:if="${ticket.status == 'CLOS'}" class="badge bg-dark fs-6 px-3 py-2 rounded-pill shadow-sm">Clos</span>
+            </div>
+        </div>
+
+        <!-- Alertes Flash -->
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+            <i class="fas fa-check-circle me-2"></i> <span th:text="${success}">Succès</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div class="row g-4">
+            <!-- Colonne Gauche : Détails et Résolution -->
+            <div class="col-lg-8">
+                <!-- Bloc Solution si résolu -->
+                <div th:if="${ticket.status == 'RESOLU' || ticket.status == 'CLOS'}" class="card card-custom border-0 shadow-sm mb-4 bg-success bg-opacity-10 border-start border-success border-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-check-circle text-success fa-2x me-3"></i>
+                            <div>
+                                <h5 class="fw-bold text-success mb-0">Incident Résolu par le Support ACE3i</h5>
+                                <span class="small text-muted" th:if="${ticket.resolvedAt != null}" th:text="'Résolu le ' + ${#temporals.format(ticket.resolvedAt, 'dd/MM/yyyy à HH:mm')}">Date</span>
+                            </div>
+                        </div>
+                        <hr class="my-3 opacity-25">
+                        <div class="mb-3" th:if="${ticket.rootCause != null && !ticket.rootCause.isEmpty()}">
+                            <h6 class="fw-bold text-dark small text-uppercase">Cause Racine :</h6>
+                            <p class="text-dark mb-0 bg-white p-3 rounded-2 shadow-sm" th:text="${ticket.rootCause}">Explication de la cause</p>
+                        </div>
+                        <div th:if="${ticket.solutionProcedure != null && !ticket.solutionProcedure.isEmpty()}">
+                            <h6 class="fw-bold text-dark small text-uppercase">Procédure & Solution Apportée :</h6>
+                            <p class="text-dark mb-0 bg-white p-3 rounded-2 shadow-sm" th:text="${ticket.solutionProcedure}">Explication de la solution</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Description initiale de l'incident -->
+                <div class="card card-custom border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white py-3">
+                        <h6 class="mb-0 fw-bold text-primary"><i class="fas fa-align-left me-2"></i>Description de la Déclaration</h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="mb-0 text-dark" style="white-space: pre-line;" th:text="${ticket.description}">Description détaillée du problème.</p>
+                    </div>
+                </div>
+
+                <!-- Pièces Jointes -->
+                <div class="card card-custom border-0 shadow-sm mb-4" th:if="${ticket.attachments != null && !ticket.attachments.isEmpty()}">
+                    <div class="card-header bg-white py-3">
+                        <h6 class="mb-0 fw-bold text-primary"><i class="fas fa-paperclip me-2"></i>Pièces Jointes (<span th:text="${ticket.attachments.size()}">0</span>)</h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-2">
+                            <div class="col-md-6" th:each="att : ${ticket.attachments}">
+                                <div class="p-3 bg-light rounded-3 d-flex align-items-center justify-content-between border">
+                                    <div class="d-flex align-items-center text-truncate me-2">
+                                        <i class="fas fa-file-alt text-primary fa-lg me-2"></i>
+                                        <div class="text-truncate">
+                                            <div class="fw-semibold small text-truncate" th:text="${att.fileName}">fichier.png</div>
+                                            <span class="text-muted small" th:text="${att.fileSize != null ? (att.fileSize / 1024) + ' Ko' : ''}">10 Ko</span>
+                                        </div>
+                                    </div>
+                                    <a th:href="@{/client/tickets/attachment/{id}(id=${att.id})}" class="btn btn-sm btn-outline-primary" target="_blank" title="Télécharger">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fil de Discussion & Échanges -->
+                <div class="card card-custom border-0 shadow-sm">
+                    <div class="card-header bg-white py-3">
+                        <h6 class="mb-0 fw-bold text-primary"><i class="fas fa-comments me-2"></i>Échanges avec le Support ACE3i</h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <!-- Liste des messages -->
+                        <div class="chat-messages mb-4">
+                            <div th:each="c : ${comments}" class="mb-3 p-3 rounded-3" 
+                                 th:classappend="${c.author.role == 'ROLE_CLIENT' ? 'bg-light border ms-4' : 'bg-primary-subtle border border-primary-subtle me-4'}">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="fw-bold small" th:classappend="${c.author.role != 'ROLE_CLIENT' ? 'text-primary' : 'text-dark'}">
+                                        <i th:class="${c.author.role != 'ROLE_CLIENT' ? 'fas fa-user-shield me-1' : 'fas fa-user me-1'}"></i>
+                                        <span th:text="${c.author.fullName}">Auteur</span>
+                                        <span th:if="${c.author.role != 'ROLE_CLIENT'}" class="badge bg-primary text-white ms-1" style="font-size: 0.65rem;">Support ACE3i</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="text-muted small" th:text="${#temporals.format(c.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2026 10:00</span>
+                                        <span th:if="${c.edited}" class="badge bg-light text-muted border" style="font-size: 0.65rem;" title="Message modifié">(modifié)</span>
+                                        <!-- Bouton Édition si l'utilisateur est l'auteur -->
+                                        <button th:if="${currentUser != null && currentUser.id == c.author.id}"
+                                                type="button"
+                                                class="btn btn-xs btn-link text-secondary p-0 ms-1 text-decoration-none"
+                                                th:data-url="@{/client/tickets/{ticketId}/comment/{commentId}/edit(ticketId=${ticket.id}, commentId=${c.id})}"
+                                                onclick="promptEditComment(this)"
+                                                title="Modifier mon message">
+                                            <i class="fas fa-pencil-alt small"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="text-dark small comment-text-content" style="white-space: pre-line;" th:text="${c.content}">Message</div>
+                                
+                                <!-- Pièces jointes rattachées au message -->
+                                <div th:if="${c.attachments != null && !c.attachments.isEmpty()}" class="mt-2 pt-2 border-top border-secondary-subtle">
+                                    <span class="small fw-semibold text-muted d-block mb-1"><i class="fas fa-paperclip me-1"></i>Fichier(s) joint(s) :</span>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <a th:each="att : ${c.attachments}" th:href="@{/client/tickets/attachment/{id}(id=${att.id})}" target="_blank"
+                                           class="badge bg-white text-primary border text-decoration-none p-2 shadow-sm d-inline-flex align-items-center gap-2">
+                                            <i class="fas fa-file-download fa-lg"></i>
+                                            <span class="text-truncate" style="max-width: 250px;" th:text="${att.fileName}">fichier.pdf</span>
+                                            <span class="text-muted small fw-normal" th:text="${att.fileSize != null ? '(' + (att.fileSize / 1024) + ' Ko)' : ''}"></span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div th:if="${#lists.isEmpty(comments)}" class="text-center text-muted py-3 small">
+                                <i class="far fa-comment-dots fa-2x mb-2 text-secondary opacity-50"></i>
+                                <p class="mb-0">Aucun message pour le moment. Vous pouvez poser une question ou ajouter un complément d'information ci-dessous.</p>
+                            </div>
+                        </div>
+
+                        <!-- Formulaire d'ajout de message -->
+                        <form th:action="@{/client/tickets/{id}/comment(id=${ticket.id})}" method="post" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <textarea name="content" class="form-control" rows="3" placeholder="Écrire un message à l'équipe support ACE3i..." required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold text-muted">
+                                    <i class="fas fa-paperclip me-1 text-primary"></i>Joindre un ou plusieurs fichiers (capture, log complémentaire...)
+                                </label>
+                                <input type="file" name="files" class="form-control form-control-sm" multiple accept="image/*,.pdf,.txt,.log,.zip">
+                                <div class="form-text" style="font-size: 0.75rem;">Images, PDF, ZIP, Logs (Max 500 Mo).</div>
+                            </div>
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                                    <i class="fas fa-paper-plane me-1"></i> Envoyer
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Colonne Droite : Méta-informations -->
+            <div class="col-lg-4">
+                <div class="card card-custom border-0 shadow-sm sticky-top" style="top: 90px;">
+                    <div class="card-header bg-white py-3">
+                        <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-info-circle me-2 text-primary"></i>Informations Incident</h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-3">
+                                <span class="text-muted small text-uppercase fw-bold d-block">Urgence :</span>
+                                <span th:if="${ticket.urgency == 'BLOQUANTE'}" class="badge bg-danger">Bloquante</span>
+                                <span th:if="${ticket.urgency == 'URGENTE'}" class="badge bg-warning text-dark">Urgente</span>
+                                <span th:if="${ticket.urgency == 'NORMALE'}" class="badge bg-info text-dark">Normale</span>
+                                <span th:if="${ticket.urgency == 'FAIBLE'}" class="badge bg-secondary">Faible</span>
+                            </li>
+                            <li class="mb-3">
+                                <span class="text-muted small text-uppercase fw-bold d-block">Application Concernée :</span>
+                                <strong class="text-dark" th:text="${ticket.applicationName}">Monétique</strong>
+                            </li>
+                            <li class="mb-3">
+                                <span class="text-muted small text-uppercase fw-bold d-block">Technicien Assigné :</span>
+                                <span th:if="${ticket.assignedTo != null && !ticket.assignedTo.isEmpty()}" class="badge bg-light text-primary border">
+                                    <i class="fas fa-user-check me-1"></i><span th:text="${ticket.assignedTo}">Technicien</span>
+                                </span>
+                                <span th:unless="${ticket.assignedTo != null && !ticket.assignedTo.isEmpty()}" class="text-muted small fst-italic">
+                                    En cours d'assignation
+                                </span>
+                            </li>
+                            <li class="mb-3">
+                                <span class="text-muted small text-uppercase fw-bold d-block">Dernière Mise à Jour :</span>
+                                <span class="text-dark small" th:text="${ticket.updatedAt != null ? #temporals.format(ticket.updatedAt, 'dd/MM/yyyy HH:mm') : '-'}">01/01/2026</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div th:replace="~{layout :: scripts}"></div>
+    <script>
+        const commentForm = document.querySelector('form[action*="/comment"]');
+        if (commentForm) {
+            commentForm.addEventListener('submit', function() {
+                if (window.Swal) {
+                    Swal.fire({
+                        title: 'Envoi...',
+                        text: 'Transmission de votre message en cours.',
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+                }
+            });
+        }
+        // Modification d'un message avec SweetAlert2
+        function promptEditComment(btn) {
+            const editUrl = btn.getAttribute('data-url');
+            const messageCard = btn.closest('.rounded-3');
+            const contentEl = messageCard ? messageCard.querySelector('.comment-text-content') : null;
+            const currentContent = contentEl ? contentEl.innerText.trim() : '';
+
+            if (window.Swal) {
+                Swal.fire({
+                    title: 'Modifier mon message',
+                    input: 'textarea',
+                    inputValue: currentContent,
+                    inputAttributes: {
+                        'rows': 5,
+                        'placeholder': 'Votre message modifié...'
+                    },
+                    showCancelButton: true,
+                    confirmButtonColor: '#ee7725',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="fas fa-save me-1"></i> Enregistrer',
+                    cancelButtonText: 'Annuler',
+                    reverseButtons: true,
+                    inputValidator: (value) => {
+                        if (!value || !value.trim()) {
+                            return 'Le message ne peut pas être vide !';
+                        }
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = editUrl;
+
+                        const csrfToken = document.querySelector('input[name="_csrf"]');
+                        if (csrfToken) {
+                            const hiddenCsrf = document.createElement('input');
+                            hiddenCsrf.type = 'hidden';
+                            hiddenCsrf.name = '_csrf';
+                            hiddenCsrf.value = csrfToken.value;
+                            form.appendChild(hiddenCsrf);
+                        }
+
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = 'content';
+                        hiddenInput.value = result.value.trim();
+                        form.appendChild(hiddenInput);
+
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

@@ -21,6 +21,9 @@ public class UserController {
     private AppUserRepository userRepository;
 
     @Autowired
+    private com.ace3i.connect.repository.ClientRepository clientRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
     
     @Autowired
@@ -53,6 +56,19 @@ public class UserController {
     @GetMapping("/new")
     public String showForm(Model model) {
         model.addAttribute("user", new AppUser());
+        model.addAttribute("clients", clientRepository.findAll());
+        return "user-form";
+    }
+
+    @GetMapping("/edit/{id}")
+    public String showEditForm(@PathVariable Long id, Model model, org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+        AppUser user = userRepository.findById(id).orElse(null);
+        if (user == null) {
+            redirectAttributes.addFlashAttribute("error", "Utilisateur non trouvé.");
+            return "redirect:/admin/users";
+        }
+        model.addAttribute("user", user);
+        model.addAttribute("clients", clientRepository.findAll());
         return "user-form";
     }
 

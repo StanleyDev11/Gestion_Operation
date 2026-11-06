@@ -53,6 +53,19 @@
     <div th:replace="~{layout :: header('Pilotage des Fonctionnalités')}"></div>
 
     <main class="main-content">
+        <!-- Top Action Bar -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold text-dark mb-0"><i class="fas fa-layer-group text-primary me-2"></i>Tableau de Bord des Déploiements</h5>
+            <div class="d-flex gap-2">
+                <a th:href="@{/settings/general}" class="btn btn-outline-secondary btn-sm" title="Configuration GitLab">
+                    <i class="fab fa-gitlab me-1 text-danger"></i> Config GitLab
+                </a>
+                <button type="button" class="btn btn-primary btn-sm shadow-sm" id="btnSyncGitlabAll">
+                    <i class="fas fa-sync-alt me-1"></i> Synchroniser avec GitLab
+                </button>
+            </div>
+        </div>
+
         <!-- KPI Row -->
         <div class="row mb-4">
             <div class="col-xl-3 col-md-6 mb-4">
@@ -561,6 +574,59 @@
                         const shouldHide = onlyLow && !Number.isNaN(coverage) && coverage >= 80;
                         row.style.display = shouldHide ? 'none' : '';
                     });
+                });
+            }
+
+            const btnSync = document.getElementById('btnSyncGitlabAll');
+            if (btnSync) {
+                btnSync.addEventListener('click', function() {
+                    const originalHtml = btnSync.innerHTML;
+                    btnSync.disabled = true;
+                    btnSync.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Synchronisation en cours...';
+
+                    fetch('/settings/gitlab/sync', { method: 'POST' })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                let details = '';
+                                if (data.results && data.results.length > 0) {
+                                    details = '<ul class="text-start mt-3 mb-0 small" style="max-height: 200px; overflow-y: auto;">';
+                                    data.results.forEach(r => {
+                                        const icon = r.success ? '✅' : '❌';
+                                        details += '<li>' + icon + ' <b>' + r.clientName + '</b> (' + (r.branchName || '-') + ') : ' + r.message + '</li>';
+                                    });
+                                    details += '</ul>';
+                                } else {
+                                    details = '<p class="text-muted small mt-2">Aucune banque n\'a de branche Git configurée.</p>';
+                                }
+
+                                Swal.fire({
+                                    icon: data.successCount > 0 ? 'success' : 'info',
+                                    title: 'Synchronisation GitLab terminée',
+                                    html: '<p>' + data.message + '</p>' + details,
+                                    confirmButtonText: 'Actualiser la page'
+                                }).then(() => {
+                                    window.location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Erreur GitLab',
+                                    text: data.message
+                                });
+                            }
+                        })
+                        .catch(err => {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Erreur réseau',
+                                text: 'Impossible de contacter le serveur : ' + err.message
+                            });
+                        })
+                        .finally(() => {
+                            btnSync.disabled = false;
+                            btnSync.innerHTML = originalHtml;
+                        });
                 });
             }
 

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Mes Incidents')}"></head>
+<body>
+
+    <div th:replace="~{layout :: sidebar('client-tickets')}"></div>
+    <div th:replace="~{layout :: header('Espace Support Client - ' + ${client.name})}"></div>
+
+    <main class="main-content">
+        <!-- Bannière d'accueil -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold mb-1">
+                    <i class="fas fa-university text-primary me-2"></i>
+                    <span th:text="${client.name}">Banque Partenaire</span>
+                </h3>
+                <p class="text-muted small mb-0">Déclarez vos incidents informatiques et suivez leur résolution en temps réel par les équipes ACE3i.</p>
+            </div>
+            <a th:href="@{/client/tickets/new}" class="btn btn-primary btn-lg shadow-sm px-4">
+                <i class="fas fa-plus-circle me-2"></i> Nouveau Ticket
+            </a>
+        </div>
+
+        <!-- Alertes Flash -->
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
+            <i class="fas fa-check-circle me-2"></i> <span th:text="${success}">Succès</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i> <span th:text="${error}">Erreur</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Cartes Statistiques KPI -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card card-custom border-0 p-3 bg-white shadow-sm">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small text-uppercase fw-bold">Nouveaux</span>
+                            <h3 class="fw-bold text-primary mb-0 mt-1" th:text="${stats.nouveau}">0</h3>
+                        </div>
+                        <div class="p-3 bg-primary-subtle text-primary rounded-circle">
+                            <i class="fas fa-inbox fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card card-custom border-0 p-3 bg-white shadow-sm">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small text-uppercase fw-bold">En Traitement</span>
+                            <h3 class="fw-bold text-warning mb-0 mt-1" th:text="${stats.enCours}">0</h3>
+                        </div>
+                        <div class="p-3 bg-warning-subtle text-warning rounded-circle">
+                            <i class="fas fa-tools fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card card-custom border-0 p-3 bg-white shadow-sm">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small text-uppercase fw-bold">En Attente</span>
+                            <h3 class="fw-bold text-secondary mb-0 mt-1" th:text="${stats.enAttente}">0</h3>
+                        </div>
+                        <div class="p-3 bg-secondary-subtle text-secondary rounded-circle">
+                            <i class="fas fa-clock fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card card-custom border-0 p-3 bg-white shadow-sm">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small text-uppercase fw-bold">Résolus</span>
+                            <h3 class="fw-bold text-success mb-0 mt-1" th:text="${stats.resolu}">0</h3>
+                        </div>
+                        <div class="p-3 bg-success-subtle text-success rounded-circle">
+                            <i class="fas fa-check-double fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtres et Recherche -->
+        <div class="card card-custom border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <form th:action="@{/client/tickets}" method="get" class="row g-3 align-items-end">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-muted">Rechercher</label>
+                        <input type="text" name="keyword" th:value="${keyword}" class="form-control" placeholder="Numéro de ticket, sujet, application...">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold text-muted">Statut</label>
+                        <select name="status" class="form-select">
+                            <option value="">Tous les statuts</option>
+                            <option value="NOUVEAU" th:selected="${status == 'NOUVEAU'}">Nouveau</option>
+                            <option value="EN_COURS" th:selected="${status == 'EN_COURS'}">En cours</option>
+                            <option value="EN_ATTENTE" th:selected="${status == 'EN_ATTENTE'}">En attente</option>
+                            <option value="RESOLU" th:selected="${status == 'RESOLU'}">Résolu</option>
+                            <option value="CLOS" th:selected="${status == 'CLOS'}">Clos</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-1"></i> Filtrer
+                        </button>
+                        <a th:href="@{/client/tickets}" class="btn btn-light border w-100">
+                            Réinitialiser
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Table des Incidents -->
+        <div class="card card-custom border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Référence</th>
+                                <th>Type</th>
+                                <th>Sujet de l'incident</th>
+                                <th>Application</th>
+                                <th>Urgence</th>
+                                <th>Statut</th>
+                                <th>Date Déclaration</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="t : ${tickets}">
+                                <td class="ps-4">
+                                    <span class="fw-bold text-primary font-monospace" th:text="${t.ticketNumber}">INC-2026-0001</span>
+                                </td>
+                                <td>
+                                    <span th:if="${t.ticketType == 'DEMANDE'}" class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                        <i class="fas fa-clipboard-list me-1"></i>Demande
+                                    </span>
+                                    <span th:unless="${t.ticketType == 'DEMANDE'}" class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Incident
+                                    </span>
+                                </td>
+                                <td>
+                                    <a th:href="@{/client/tickets/view/{id}(id=${t.id})}" class="text-dark fw-semibold text-decoration-none" th:text="${t.title}">Sujet</a>
+                                    <div class="small text-muted" th:text="'Déclaré par ' + ${t.createdBy.fullName}">Demandeur</div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border" th:text="${t.applicationName}">Application</span>
+                                </td>
+                                <td>
+                                    <span th:if="${t.urgency == 'BLOQUANTE'}" class="badge bg-danger">Bloquante</span>
+                                    <span th:if="${t.urgency == 'URGENTE'}" class="badge bg-warning text-dark">Urgente</span>
+                                    <span th:if="${t.urgency == 'NORMALE'}" class="badge bg-info text-dark">Normale</span>
+                                    <span th:if="${t.urgency == 'FAIBLE'}" class="badge bg-secondary">Faible</span>
+                                </td>
+                                <td>
+                                    <span th:if="${t.status == 'NOUVEAU'}" class="badge bg-primary-subtle text-primary border border-primary-subtle">Nouveau</span>
+                                    <span th:if="${t.status == 'EN_COURS'}" class="badge bg-warning-subtle text-warning border border-warning-subtle">En cours</span>
+                                    <span th:if="${t.status == 'EN_ATTENTE'}" class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">En attente</span>
+                                    <span th:if="${t.status == 'RESOLU'}" class="badge bg-success-subtle text-success border border-success-subtle">Résolu</span>
+                                    <span th:if="${t.status == 'CLOS'}" class="badge bg-dark-subtle text-dark border">Clos</span>
+                                </td>
+                                <td class="text-muted small" th:text="${#temporals.format(t.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2026</td>
+                                <td class="text-center">
+                                    <a th:href="@{/client/tickets/view/{id}(id=${t.id})}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                        <i class="fas fa-eye me-1"></i> Suivre
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(tickets)}">
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <i class="fas fa-folder-open fa-3x mb-3 text-secondary opacity-50"></i>
+                                    <p class="mb-2">Aucun incident trouvé.</p>
+                                    <a th:href="@{/client/tickets/new}" class="btn btn-sm btn-primary">Déclarer un premier incident</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="card-footer bg-white border-0 py-3" th:if="${totalPages > 0}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-muted small">
+                        Affichage de <span th:text="${tickets.size()}">0</span> sur <span th:text="${totalItems}">0</span> ticket(s)
+                    </div>
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                                <a class="page-link" th:href="@{/client/tickets(page=${currentPage - 1}, keyword=${keyword}, status=${status})}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}" 
+                                th:classappend="${currentPage == i} ? 'active'">
+                                <a class="page-link" th:href="@{/client/tickets(page=${i}, keyword=${keyword}, status=${status})}" th:text="${i + 1}"></a>
+                            </li>
+                            <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+                                <a class="page-link" th:href="@{/client/tickets(page=${currentPage + 1}, keyword=${keyword}, status=${status})}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div th:replace="~{layout :: scripts}"></div>
+</body>
+</html>

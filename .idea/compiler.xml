@@ -8,11 +8,13 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="gestion-missions" />
+        <module name="ace3i-connect" />
       </profile>
     </annotationProcessing>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="ace3i-connect" options="-parameters" />
       <module name="gestion-missions" options="-parameters" />
     </option>
   </component>

@@ -32,7 +32,14 @@ public class AppUser {
     
     @NotBlank(message = "Le rôle est obligatoire")
     @Column(name = "USEROL")
-    private String role; // ROLE_ADMIN ou ROLE_TECHNICIAN
+    private String role; // ROLE_ADMIN, ROLE_TECHNICIAN, ROLE_CLIENT
+
+    @Column(name = "USEPHO")
+    private String phone;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "CLIID")
+    private Client client;
 
     @Column(name = "USEACT")
     private boolean active = true;

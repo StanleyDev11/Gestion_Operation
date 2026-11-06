@@ -38,11 +38,30 @@
                                     <label class="form-label fw-semibold">Rôle / Accès</label>
                                     <div class="input-group shadow-sm">
                                         <span class="input-group-text bg-white" th:classappend="${#fields.hasErrors('role')} ? 'border-danger text-danger' : ''"><i class="fas fa-user-shield text-muted"></i></span>
-                                        <select th:field="*{role}" class="form-select border-start-0" th:classappend="${#fields.hasErrors('role')} ? 'is-invalid' : ''">
-                                            <option value="ROLE_TECHNICIAN">Technicien (Accès limité)</option>
+                                        <select th:field="*{role}" id="roleSelect" class="form-select border-start-0" th:classappend="${#fields.hasErrors('role')} ? 'is-invalid' : ''" onchange="toggleClientSelect()">
+                                            <option value="ROLE_TECHNICIAN">Technicien (Accès complet missions)</option>
                                             <option value="ROLE_ADMIN">Administrateur (Accès complet)</option>
+                                            <option value="ROLE_CLIENT">Client / Banque (Portail incidents dédié)</option>
                                         </select>
                                         <div class="invalid-feedback" th:if="${#fields.hasErrors('role')}" th:errors="*{role}">Erreur</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6" id="clientSelectGroup">
+                                    <label class="form-label fw-semibold">Banque / Client rattaché</label>
+                                    <div class="input-group shadow-sm">
+                                        <span class="input-group-text bg-white"><i class="fas fa-building text-muted"></i></span>
+                                        <select th:field="*{client.id}" class="form-select border-start-0">
+                                            <option value="">-- Aucun (Personnel interne ACE3i) --</option>
+                                            <option th:each="c : ${clients}" th:value="${c.id}" th:text="${c.name}">Banque</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-text small text-muted">Obligatoire pour les comptes avec le rôle Client.</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Téléphone</label>
+                                    <div class="input-group shadow-sm">
+                                        <span class="input-group-text bg-white"><i class="fas fa-phone text-muted"></i></span>
+                                        <input type="tel" th:field="*{phone}" class="form-control border-start-0" placeholder="Ex: +228 90 00 00 00" />
                                     </div>
                                 </div>
                                 <div class="col-md-12">
@@ -70,5 +89,17 @@
     </main>
 
     <div th:replace="~{layout :: scripts}"></div>
+    <script>
+        function toggleClientSelect() {
+            const role = document.getElementById('roleSelect').value;
+            const clientGroup = document.getElementById('clientSelectGroup');
+            if (role === 'ROLE_CLIENT') {
+                clientGroup.style.display = 'block';
+            } else {
+                clientGroup.style.display = 'block'; // Keep visible or flexible
+            }
+        }
+        document.addEventListener('DOMContentLoaded', toggleClientSelect);
+    </script>
 </body>
 </html>

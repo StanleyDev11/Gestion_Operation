@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Configuration Générale')}"></head>
+<body>
+
+    <div th:replace="~{layout :: sidebar('settings-general')}"></div>
+    <div th:replace="~{layout :: header('Configuration des Documents')}"></div>
+
+    <main class="main-content">
+        <div class="row justify-content-center">
+            <div class="col-md-11">
+                <div class="card card-custom">
+                    <div class="card-header bg-white fw-bold py-3">
+                        <h5 class="mb-0 text-primary"><i class="fas fa-file-invoice me-2"></i>CONFIGURATION DES DOCUMENTS (PDF)</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <form th:action="@{/settings/save}" th:object="${config}" method="post" enctype="multipart/form-data">
+                            
+                            <div class="section-title">IDENTITÉ VISUELLE (LOGOS PDF)</div>
+                            <div class="row mb-5">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Logo ACE3i (Gauche)</label>
+                                    <div class="input-group mb-2">
+                                        <input type="file" name="logoLFile" class="form-control" accept="image/*" />
+                                    </div>
+                                    <div class="mt-2 text-center border rounded-3 p-3 bg-light d-flex align-items-center justify-content-center" style="height: 120px;">
+                                        <img th:if="${config.logoLeft != null}" th:src="${config.logoLeft}" style="max-height: 100%; max-width: 100%;" />
+                                        <div th:if="${config.logoLeft == null}" class="text-muted small">
+                                            <i class="fas fa-image fa-2x mb-2 d-block opacity-25"></i>
+                                            Aucun logo configuré
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Logo Partenaire (Droite)</label>
+                                    <div class="input-group mb-2">
+                                        <input type="file" name="logoRFile" class="form-control" accept="image/*" />
+                                    </div>
+                                    <div class="mt-2 text-center border rounded-3 p-3 bg-light d-flex align-items-center justify-content-center" style="height: 120px;">
+                                        <img th:if="${config.logoRight != null}" th:src="${config.logoRight}" style="max-height: 100%; max-width: 100%;" />
+                                        <div th:if="${config.logoRight == null}" class="text-muted small">
+                                            <i class="fas fa-image fa-2x mb-2 d-block opacity-25"></i>
+                                            Aucun logo configuré
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="section-title">FILIGRANE PDF (IMAGE D'ARRIÈRE-PLAN)</div>
+                            <div class="row mb-5">
+                                <div class="col-md-12">
+                                    <label class="form-label fw-semibold">Image du filigrane</label>
+                                    <div class="input-group mb-2">
+                                        <input type="file" name="watermarkFile" class="form-control" accept="image/*" />
+                                    </div>
+                                    <p class="text-muted small"><i class="fas fa-info-circle me-1"></i>Cette image apparaîtra au centre de chaque page du PDF avec une transparence légère.</p>
+                                    <div class="mt-2 text-center border rounded-3 p-3 bg-light d-flex align-items-center justify-content-center" style="height: 150px; background-image: linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0), linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0); background-size: 20px 20px; background-position: 0 0, 10px 10px;">
+                                        <img th:if="${config.watermarkImage != null}" th:src="${config.watermarkImage}" style="max-height: 100%; max-width: 100%; opacity: 0.6;" />
+                                        <div th:if="${config.watermarkImage == null}" class="text-muted small">
+                                            <i class="fas fa-stamp fa-2x mb-2 d-block opacity-25"></i>
+                                            Aucun filigrane configuré
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="section-title">INFORMATIONS DE L'ENTREPRISE (PIED DE PAGE PDF)</div>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-12">
+                                    <label class="form-label fw-semibold">Nom de l'entreprise</label>
+                                    <input type="text" th:field="*{companyName}" class="form-control shadow-sm" placeholder="Ex: ACE3i AFRICA" />
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-semibold">Adresse physique / Siège social</label>
+                                    <input type="text" th:field="*{address}" class="form-control shadow-sm" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Téléphone de contact</label>
+                                    <div class="input-group shadow-sm">
+                                        <span class="input-group-text bg-white"><i class="fas fa-phone text-muted"></i></span>
+                                        <input type="text" th:field="*{phone}" class="form-control border-start-0" />
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Email de contact</label>
+                                    <div class="input-group shadow-sm">
+                                        <span class="input-group-text bg-white"><i class="fas fa-envelope text-muted"></i></span>
+                                        <input type="email" th:field="*{email}" class="form-control border-start-0" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="section-title">CONFIGURATION DES ALERTES EMAIL</div>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-12">
+                                    <label class="form-label fw-semibold">Email de destination des alertes</label>
+                                    <div class="input-group shadow-sm">
+                                        <span class="input-group-text bg-white"><i class="fas fa-bell text-warning"></i></span>
+                                        <input type="email" th:field="*{notificationEmail}" class="form-control border-start-0" placeholder="Ex: admin@ace3i.com" />
+                                    </div>
+                                    <div class="form-text">C'est à cette adresse que seront envoyées les notifications de retard de mission.</div>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label fw-semibold">Serveur SMTP (Hôte)</label>
+                                    <input type="text" th:field="*{smtpHost}" class="form-control shadow-sm" placeholder="Ex: smtp.gmail.com" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Port SMTP</label>
+                                    <input type="number" th:field="*{smtpPort}" class="form-control shadow-sm" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Utilisateur SMTP</label>
+                                    <input type="text" th:field="*{smtpUsername}" class="form-control shadow-sm" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Mot de passe SMTP</label>
+                                    <input type="password" th:field="*{smtpPassword}" class="form-control shadow-sm" />
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch mt-2">
+                                        <input class="form-check-input" type="checkbox" th:field="*{smtpAuth}" id="smtpAuth">
+                                        <label class="form-check-label fw-semibold" for="smtpAuth">Authentification SMTP</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch mt-2">
+                                        <input class="form-check-input" type="checkbox" th:field="*{smtpStartTls}" id="smtpStartTls">
+                                        <label class="form-check-label fw-semibold" for="smtpStartTls">Activer STARTTLS (Recommandé)</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-5 pt-3 border-top d-flex justify-content-end gap-3">
+                                <a th:href="@{/dashboard}" class="btn btn-outline-secondary px-4">Annuler</a>
+                                <button type="submit" class="btn btn-primary px-5 shadow-sm">
+                                    <i class="fas fa-save me-2"></i>Enregistrer les modifications
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Section GitLab (formulaire séparé) -->
+                        <hr class="my-5" />
+                        <div class="section-title d-flex align-items-center gap-2">
+                            <i class="fab fa-gitlab text-danger"></i> INTÉGRATION GITLAB (DÉPÔT INTERNE)
+                        </div>
+                        <form th:action="@{/settings/gitlab/save}" th:object="${config}" method="post">
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-12">
+                                    <label class="form-label fw-semibold">URL du serveur GitLab</label>
+                                    <div class="input-group shadow-sm">
+                                        <span class="input-group-text bg-white"><i class="fas fa-server text-muted"></i></span>
+                                        <input type="text" th:field="*{gitlabUrl}" class="form-control border-start-0"
+                                               placeholder="Ex: http://192.168.1.50:8080 ou http://gitlab.ace3i.local" />
+                                    </div>
+                                    <div class="form-text">URL complète de votre instance GitLab auto-hébergée (sans slash final).</div>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label fw-semibold">Token d'accès GitLab</label>
+                                    <div class="input-group shadow-sm">
+                                        <span class="input-group-text bg-white"><i class="fas fa-key text-muted"></i></span>
+                                        <input type="password" th:field="*{gitlabToken}" class="form-control border-start-0"
+                                               placeholder="glpat-xxxxxxxxxxxxxxxxxxxx" autocomplete="off" id="gitlabTokenInput" />
+                                        <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('gitlabTokenInput').type = document.getElementById('gitlabTokenInput').type === 'password' ? 'text' : 'password'">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text">Personal Access Token ou Project Access Token avec le scope <code>read_api</code>.</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">ID(s) du ou des Projets</label>
+                                    <input type="text" th:field="*{gitlabProjectId}" class="form-control shadow-sm"
+                                           placeholder="Ex: 22 ou 22, 25, 30" />
+                                    <div class="form-text">ID numérique (séparez par des virgules si plusieurs dépôts).</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Branche principale <span class="text-muted small fw-normal">(Facultatif)</span></label>
+                                    <div class="input-group shadow-sm">
+                                        <span class="input-group-text bg-white"><i class="fas fa-code-branch text-muted"></i></span>
+                                        <input type="text" th:field="*{gitlabDefaultBranch}" class="form-control border-start-0"
+                                               placeholder="master" />
+                                    </div>
+                                    <div class="form-text">Branche socle de repli (ex: master ou main).</div>
+                                </div>
+                                <div class="col-md-6 d-flex align-items-end">
+                                    <button type="button" class="btn btn-outline-info w-100 shadow-sm" id="btnTestGitlab">
+                                        <i class="fas fa-plug me-2"></i>Tester la connexion GitLab
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end gap-3 pt-2">
+                                <button type="submit" class="btn btn-primary px-5 shadow-sm">
+                                    <i class="fas fa-save me-2"></i>Enregistrer la config GitLab
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div th:replace="~{layout :: scripts}"></div>
+    <script>
+        document.getElementById('btnTestGitlab').addEventListener('click', function () {
+            const btn = this;
+            const urlInput = document.querySelector('input[name="gitlabUrl"]');
+            const gitlabUrl = urlInput ? urlInput.value : '';
+            const tokenInput = document.getElementById('gitlabTokenInput');
+            const token = tokenInput ? tokenInput.value : '';
+
+            const csrfInput = document.querySelector('input[name="_csrf"]');
+            const csrfParam = csrfInput ? '&_csrf=' + encodeURIComponent(csrfInput.value) : '';
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Test en cours...';
+
+            fetch('/settings/gitlab/test-connection', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    ...(csrfInput ? { 'X-CSRF-TOKEN': csrfInput.value } : {})
+                },
+                body: 'gitlabUrl=' + encodeURIComponent(gitlabUrl) + '&gitlabToken=' + encodeURIComponent(token) + csrfParam
+            })
+            .then(async r => {
+                if (!r.ok) {
+                    const text = await r.text();
+                    throw new Error('Erreur HTTP ' + r.status + (text ? ' : ' + text.substring(0, 100) : ''));
+                }
+                return r.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({ icon: 'success', title: 'Connexion réussie !', text: data.message, timer: 4000, showConfirmButton: false });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Échec de connexion', text: data.message });
+                }
+            })
+            .catch(err => {
+                Swal.fire({ icon: 'error', title: 'Erreur', text: err.message });
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-plug me-2"></i>Tester la connexion GitLab';
+            });
+        });
+    </script>
+</body>
+</html>

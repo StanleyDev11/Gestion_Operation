@@ -1,0 +1,254 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Gestion des Incidents Clients')}"></head>
+<body>
+
+    <div th:replace="~{layout :: sidebar('tickets')}"></div>
+    <div th:replace="~{layout :: header('Centre de Traitement des Incidents')}"></div>
+
+    <main class="main-content">
+        <!-- En-tête -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold mb-1">Incidents & Support Banques Partenaires</h3>
+                <p class="text-muted small mb-0">Vue centralisée multi-clients pour la prise en charge et le diagnostic technique.</p>
+            </div>
+            <div>
+                <a th:href="@{/tickets(urgency='BLOQUANTE')}" class="btn btn-danger shadow-sm px-3 position-relative">
+                    <i class="fas fa-radiation-alt me-2"></i> Incidents Bloquants
+                    <span class="badge bg-white text-danger ms-2" th:text="${stats.bloquante}">0</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Alertes Flash -->
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
+            <i class="fas fa-check-circle me-2"></i> <span th:text="${success}">Succès</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i> <span th:text="${error}">Erreur</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Cartes Statistiques KPI Globales -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card card-custom border-0 p-3 bg-white shadow-sm border-start border-primary border-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small text-uppercase fw-bold">À Traiter</span>
+                            <h3 class="fw-bold text-primary mb-0 mt-1" th:text="${stats.nouveau}">0</h3>
+                        </div>
+                        <div class="p-3 bg-primary-subtle text-primary rounded-circle">
+                            <i class="fas fa-inbox fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card card-custom border-0 p-3 bg-white shadow-sm border-start border-warning border-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small text-uppercase fw-bold">En Diagnostic</span>
+                            <h3 class="fw-bold text-warning mb-0 mt-1" th:text="${stats.enCours}">0</h3>
+                        </div>
+                        <div class="p-3 bg-warning-subtle text-warning rounded-circle">
+                            <i class="fas fa-wrench fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card card-custom border-0 p-3 bg-white shadow-sm border-start border-secondary border-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small text-uppercase fw-bold">En Attente</span>
+                            <h3 class="fw-bold text-secondary mb-0 mt-1" th:text="${stats.enAttente}">0</h3>
+                        </div>
+                        <div class="p-3 bg-secondary-subtle text-secondary rounded-circle">
+                            <i class="fas fa-pause fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card card-custom border-0 p-3 bg-white shadow-sm border-start border-success border-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small text-uppercase fw-bold">Résolus</span>
+                            <h3 class="fw-bold text-success mb-0 mt-1" th:text="${stats.resolu}">0</h3>
+                        </div>
+                        <div class="p-3 bg-success-subtle text-success rounded-circle">
+                            <i class="fas fa-check-circle fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtres Avancés Multi-Clients -->
+        <div class="card card-custom border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <form th:action="@{/tickets}" method="get" class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold text-muted">Rechercher</label>
+                        <input type="text" name="keyword" th:value="${keyword}" class="form-control" placeholder="Réf, sujet, application, mot-clé...">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold text-muted">Client / Banque</label>
+                        <select name="clientId" class="form-select">
+                            <option value="">Tous les clients</option>
+                            <option th:each="c : ${clients}" th:value="${c.id}" th:text="${c.name}" th:selected="${clientId == c.id}">Banque</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold text-muted">Urgence</label>
+                        <select name="urgency" class="form-select">
+                            <option value="">Toutes</option>
+                            <option value="BLOQUANTE" th:selected="${urgency == 'BLOQUANTE'}">🔴 Bloquante</option>
+                            <option value="URGENTE" th:selected="${urgency == 'URGENTE'}">🟡 Urgente</option>
+                            <option value="NORMALE" th:selected="${urgency == 'NORMALE'}">🔵 Normale</option>
+                            <option value="FAIBLE" th:selected="${urgency == 'FAIBLE'}">🟢 Faible</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold text-muted">Statut</label>
+                        <select name="status" class="form-select">
+                            <option value="">Tous les statuts</option>
+                            <option value="NOUVEAU" th:selected="${status == 'NOUVEAU'}">Nouveau</option>
+                            <option value="EN_COURS" th:selected="${status == 'EN_COURS'}">En cours</option>
+                            <option value="EN_ATTENTE" th:selected="${status == 'EN_ATTENTE'}">En attente</option>
+                            <option value="RESOLU" th:selected="${status == 'RESOLU'}">Résolu</option>
+                            <option value="CLOS" th:selected="${status == 'CLOS'}">Clos</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                            <label class="form-label small fw-bold text-muted">Type</label>
+                            <select name="ticketType" class="form-select">
+                                <option value="">Tous types</option>
+                                <option value="INCIDENT" th:selected="${ticketType == 'INCIDENT'}">Incident</option>
+                                <option value="DEMANDE" th:selected="${ticketType == 'DEMANDE'}">Demande</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1 d-flex gap-1">
+                        <button type="submit" class="btn btn-primary w-100" title="Filtrer">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Table des Incidents -->
+        <div class="card card-custom border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Réf & Urgence</th>
+                                <th>Client (Banque)</th>
+                                <th>Sujet & Module</th>
+                                <th>Statut</th>
+                                <th>Technicien ACE3i</th>
+                                <th>Date Réception</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="t : ${tickets}" th:classappend="${t.urgency == 'BLOQUANTE' && t.status != 'RESOLU' && t.status != 'CLOS' ? 'table-danger bg-opacity-25' : ''}">
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-2">
+                                            <span th:if="${t.urgency == 'BLOQUANTE'}" class="badge bg-danger shadow-sm">Bloquante</span>
+                                            <span th:if="${t.urgency == 'URGENTE'}" class="badge bg-warning text-dark">Urgente</span>
+                                            <span th:if="${t.urgency == 'NORMALE'}" class="badge bg-info text-dark">Normale</span>
+                                            <span th:if="${t.urgency == 'FAIBLE'}" class="badge bg-secondary">Faible</span>
+                                        </div>
+                                        <span class="fw-bold font-monospace" th:text="${t.ticketNumber}">INC-2026-0001</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-dark">
+                                        <i class="fas fa-university text-primary me-1"></i>
+                                        <span th:text="${t.client.name}">Banque</span>
+                                    </div>
+                                    <div class="small text-muted" th:text="${t.createdBy.fullName}">Contact</div>
+                                </td>
+                                <td>
+                                    <a th:href="@{/tickets/process/{id}(id=${t.id})}" class="fw-semibold text-dark text-decoration-none" th:text="${t.title}">Titre de l'incident</a>
+                                    <div class="small text-muted">
+                                        <span th:if="${t.ticketType == 'DEMANDE'}" class="badge bg-primary-subtle text-primary border border-primary-subtle me-1"><i class="fas fa-clipboard-list me-1"></i>Demande</span>
+                                         <span th:unless="${t.ticketType == 'DEMANDE'}" class="badge bg-danger-subtle text-danger border border-danger-subtle me-1"><i class="fas fa-exclamation-triangle me-1"></i>Incident</span>
+                                         <span class="badge bg-light text-dark border" th:text="${t.applicationName}">Module</span>
+                                        <span th:if="${!#lists.isEmpty(t.attachments)}" class="text-primary ms-2" title="Pièces jointes">
+                                            <i class="fas fa-paperclip"></i> <span th:text="${t.attachments.size()}"></span>
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span th:if="${t.status == 'NOUVEAU'}" class="badge bg-primary-subtle text-primary border border-primary-subtle">Nouveau</span>
+                                    <span th:if="${t.status == 'EN_COURS'}" class="badge bg-warning-subtle text-warning border border-warning-subtle">En cours</span>
+                                    <span th:if="${t.status == 'EN_ATTENTE'}" class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">En attente</span>
+                                    <span th:if="${t.status == 'RESOLU'}" class="badge bg-success-subtle text-success border border-success-subtle">Résolu</span>
+                                    <span th:if="${t.status == 'CLOS'}" class="badge bg-dark-subtle text-dark border">Clos</span>
+                                </td>
+                                <td>
+                                    <span th:if="${t.assignedTo != null && !t.assignedTo.isEmpty()}" class="badge bg-light text-dark border">
+                                        <i class="fas fa-user-tag text-primary me-1"></i><span th:text="${t.assignedTo}">Nom Technicien</span>
+                                    </span>
+                                    <span th:unless="${t.assignedTo != null && !t.assignedTo.isEmpty()}" class="badge bg-danger-subtle text-danger">
+                                        Non assigné
+                                    </span>
+                                </td>
+                                <td class="text-muted small" th:text="${#temporals.format(t.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2026</td>
+                                <td class="text-center">
+                                    <a th:href="@{/tickets/process/{id}(id=${t.id})}" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm">
+                                        <i class="fas fa-sliders-h me-1"></i> Traiter
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(tickets)}">
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="fas fa-check-circle fa-3x text-success mb-3 opacity-50"></i>
+                                    <p class="mb-0">Aucun incident ne correspond aux critères sélectionnés.</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="card-footer bg-white border-0 py-3" th:if="${totalPages > 0}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-muted small">
+                        Affichage de <span th:text="${tickets.size()}">0</span> sur <span th:text="${totalItems}">0</span> incidents
+                    </div>
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                                <a class="page-link" th:href="@{/tickets(page=${currentPage - 1}, clientId=${clientId}, status=${status}, urgency=${urgency}, keyword=${keyword})}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}" 
+                                th:classappend="${currentPage == i} ? 'active'">
+                                <a class="page-link" th:href="@{/tickets(page=${i}, clientId=${clientId}, status=${status}, urgency=${urgency}, keyword=${keyword})}" th:text="${i + 1}"></a>
+                            </li>
+                            <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+                                <a class="page-link" th:href="@{/tickets(page=${currentPage + 1}, clientId=${clientId}, status=${status}, urgency=${urgency}, keyword=${keyword})}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div th:replace="~{layout :: scripts}"></div>
+</body>
+</html>

@@ -31,6 +31,7 @@
                             <option value="">Tous les rôles</option>
                             <option value="ROLE_ADMIN" th:selected="${role == 'ROLE_ADMIN'}">Administrateur</option>
                             <option value="ROLE_TECHNICIAN" th:selected="${role == 'ROLE_TECHNICIAN'}">Technicien</option>
+                            <option value="ROLE_CLIENT" th:selected="${role == 'ROLE_CLIENT'}">Client (Banque)</option>
                         </select>
                     </div>
                     <div class="col-md-4 d-flex gap-2">
@@ -69,8 +70,12 @@
                                 </td>
                                 <td th:text="${u.username}">admin</td>
                                 <td>
-                                    <span class="badge" th:classappend="${u.role == 'ROLE_ADMIN' ? 'bg-primary-subtle text-primary' : 'bg-info-subtle text-info'}" 
-                                          th:text="${u.role == 'ROLE_ADMIN' ? 'Administrateur' : 'Technicien'}">Rôle</span>
+                                    <span class="badge" 
+                                          th:classappend="${u.role == 'ROLE_ADMIN' ? 'bg-primary-subtle text-primary' : (u.role == 'ROLE_CLIENT' ? 'bg-success-subtle text-success' : 'bg-info-subtle text-info')}" 
+                                          th:text="${u.role == 'ROLE_ADMIN' ? 'Administrateur' : (u.role == 'ROLE_CLIENT' ? 'Client' : 'Technicien')}">Rôle</span>
+                                    <div th:if="${u.client != null}" class="small text-muted mt-1">
+                                        <i class="fas fa-university me-1"></i><span th:text="${u.client.name}">Banque</span>
+                                    </div>
                                 </td>
                                 <td>
                                     <span class="badge bg-success-subtle text-success">Actif</span>

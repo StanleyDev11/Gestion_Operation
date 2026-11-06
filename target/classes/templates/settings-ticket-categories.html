@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Modules et Categories de Tickets')}"></head>
+<body>
+
+    <div th:replace="~{layout :: sidebar('settings-ticket-categories')}"></div>
+    <div th:replace="~{layout :: header('Modules et Categories de Tickets')}"></div>
+
+    <main class="main-content">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+
+                <!-- Alertes Flash -->
+                <div th:if="${success}" class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+                    <i class="fas fa-check-circle me-2"></i><span th:text="${success}">Succès</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i><span th:text="${error}">Erreur</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <div class="card card-custom border-0 shadow-sm">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <h5 class="mb-0 fw-bold text-primary">
+                                <i class="fas fa-tags me-2"></i>MODULES ET CATEGORIES DE TICKETS
+                            </h5>
+                            <span class="badge bg-primary rounded-pill" th:text="${categories.size()} + ' modules'">0 modules</span>
+                        </div>
+                        <p class="text-muted small mb-0 mt-1">
+                            Gérez ici la liste des applications et modules affichés dans le formulaire de déclaration de ticket client.
+                        </p>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+
+                            <!-- Formulaire Ajout -->
+                            <div class="col-md-4">
+                                <div class="card border-0 bg-light h-100">
+                                    <div class="card-header bg-transparent border-0 fw-bold text-dark pt-3">
+                                        <i class="fas fa-plus-circle text-primary me-2"></i>NOUVEAU MODULE
+                                    </div>
+                                    <div class="card-body">
+                                        <form th:action="@{/settings/ticket-categories/add}" th:object="${newCategory}" method="post">
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-bold text-muted">NOM DU MODULE <span class="text-danger">*</span></label>
+                                                <input type="text" th:field="*{name}" class="form-control"
+                                                       placeholder="Ex: Monétique (GAB / Cartes)" required maxlength="100">
+                                                <div class="form-text">Nom affiché dans le formulaire client.</div>
+                                            </div>
+                                            <div class="mb-4">
+                                                <label class="form-label small fw-bold text-muted">ORDRE D'AFFICHAGE</label>
+                                                <input type="number" th:field="*{displayOrder}" class="form-control"
+                                                       placeholder="0" min="0" max="999">
+                                                <div class="form-text">Les modules avec un ordre plus petit apparaissent en premier.</div>
+                                            </div>
+                                            <div class="d-grid">
+                                                <button type="submit" class="btn btn-primary rounded-pill">
+                                                    <i class="fas fa-plus me-1"></i> Ajouter le module
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Liste des catégories -->
+                            <div class="col-md-8">
+                                <div th:if="${#lists.isEmpty(categories)}" class="text-center text-muted py-5">
+                                    <i class="fas fa-tags fa-3x mb-3 opacity-25"></i>
+                                    <p>Aucun module configuré. Ajoutez votre premier module à gauche.</p>
+                                </div>
+                                <div th:unless="${#lists.isEmpty(categories)}" class="table-responsive">
+                                    <table class="table table-hover align-middle">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th class="small text-muted fw-bold">ORDRE</th>
+                                                <th class="small text-muted fw-bold">NOM DU MODULE</th>
+                                                <th class="small text-muted fw-bold text-center">STATUT</th>
+                                                <th class="small text-muted fw-bold text-end">ACTIONS</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr th:each="cat : ${categories}"
+                                                th:classappend="${!cat.active} ? 'opacity-50' : ''">
+                                                <td class="font-monospace text-muted small" th:text="${cat.displayOrder}">0</td>
+                                                <td>
+                                                    <i class="fas fa-cube text-primary me-2 small"></i>
+                                                    <span th:text="${cat.name}" th:classappend="${!cat.active} ? 'text-decoration-line-through text-muted' : 'fw-semibold'">Module</span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span th:if="${cat.active}" class="badge bg-success-subtle text-success border border-success-subtle">
+                                                        <i class="fas fa-check-circle me-1"></i>Actif
+                                                    </span>
+                                                    <span th:unless="${cat.active}" class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+                                                        <i class="fas fa-ban me-1"></i>Inactif
+                                                    </span>
+                                                </td>
+                                                <td class="text-end">
+                                                    <!-- Toggle Actif/Inactif -->
+                                                    <form th:action="@{/settings/ticket-categories/toggle/{id}(id=${cat.id})}" method="post" class="d-inline">
+                                                        <button type="submit" class="btn btn-sm btn-outline-secondary rounded-pill me-1"
+                                                                th:title="${cat.active} ? 'Désactiver' : 'Activer'">
+                                                            <i class="fas" th:classappend="${cat.active} ? 'fa-toggle-on text-success' : 'fa-toggle-off text-muted'"></i>
+                                                        </button>
+                                                    </form>
+                                                    <!-- Supprimer -->
+                                                    <a href="javascript:void(0)"
+                                                       th:data-url="@{/settings/ticket-categories/delete-get/{id}(id=${cat.id})}"
+                                                       th:data-name="${cat.name}"
+                                                       onclick="confirmDeleteCat(this)"
+                                                       class="btn btn-sm btn-outline-danger rounded-pill"
+                                                       title="Supprimer">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Info box -->
+                                <div class="alert alert-info border-0 shadow-sm mt-3 small">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Astuce :</strong> Les modules <strong>inactifs</strong> n'apparaissent pas dans le formulaire de déclaration client.
+                                    Utilisez le bouton <i class="fas fa-toggle-on text-success"></i> pour activer/désactiver sans supprimer.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <div th:replace="~{layout :: scripts}"></div>
+    <script>
+        function confirmDeleteCat(el) {
+            const name = el.getAttribute('data-name') || 'ce module';
+            const url  = el.getAttribute('data-url');
+            if (typeof confirmDelete === 'function') {
+                confirmDelete(url, 'Voulez-vous vraiment supprimer le module "' + name + '" ?');
+            } else if (window.Swal) {
+                Swal.fire({
+                    title: 'Êtes-vous sûr ?',
+                    text: 'Voulez-vous vraiment supprimer le module "' + name + '" ?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ee7725',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Oui, supprimer',
+                    cancelButtonText: 'Annuler',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = url;
+                    }
+                });
+            } else if (confirm('Supprimer le module "' + name + '" ?')) {
+                window.location.href = url;
+            }
+        }
+    </script>
+</body>
+</html>

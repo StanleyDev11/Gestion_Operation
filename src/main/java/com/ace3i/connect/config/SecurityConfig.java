@@ -19,10 +19,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/settings/gitlab/**"))
             .authorizeHttpRequests((requests) -> requests
                 .requestMatchers("/login", "/css/**", "/js/**", "/images/**", "/static/**").permitAll()
+                .requestMatchers("/client/**").hasAnyRole("CLIENT", "ADMIN")
+                .requestMatchers("/tickets/**").hasAnyRole("ADMIN", "TECHNICIAN")
                 .requestMatchers("/h2-console/**").hasRole("ADMIN")
                 .requestMatchers("/admin/**", "/dashboard/**", "/settings/**", "/actuator/**").hasRole("ADMIN")
+                .requestMatchers("/missions/**", "/feature-tracking/**").hasAnyRole("ADMIN", "TECHNICIAN")
                 .anyRequest().authenticated()
             )
             .formLogin((form) -> form

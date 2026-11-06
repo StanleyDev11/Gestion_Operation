@@ -47,7 +47,7 @@
         </div>
 
         <!-- KPIs -->
-        <div class="row g-4 mb-5">
+        <div class="row g-4 mb-4">
             <div class="col-md-3">
                 <div class="card card-custom h-100 border-start border-primary border-5">
                     <div class="card-body">
@@ -81,6 +81,145 @@
                         <div class="text-muted small fw-bold text-uppercase">Clients Actifs</div>
                         <h2 class="fw-bold mb-0" id="totalClients">0</h2>
                         <i class="fas fa-users text-secondary opacity-25 position-absolute top-50 end-0 translate-middle-y me-3 fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Support & Incidents Clients -->
+        <div class="card card-custom border-0 shadow-sm mb-5 bg-white">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="fas fa-headset text-primary me-2"></i>Vigilance Support & Incidents Banques
+                </h5>
+                <a th:href="@{/tickets}" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm">
+                    <i class="fas fa-external-link-alt me-1"></i> Console Incidents
+                </a>
+            </div>
+            <div class="card-body p-4">
+                <!-- KPI Incidents -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="p-3 rounded-3 border-start border-danger border-4 bg-light d-flex justify-content-between align-items-center"
+                             th:classappend="${incidentStats.bloquantesActives > 0 ? 'border border-danger bg-danger bg-opacity-10' : ''}">
+                            <div>
+                                <span class="small fw-bold text-danger text-uppercase">Bloquants Actifs</span>
+                                <h3 class="fw-bold mb-0 text-danger" th:text="${incidentStats.bloquantesActives}">0</h3>
+                            </div>
+                            <div class="p-2 bg-danger-subtle text-danger rounded-circle">
+                                <i class="fas fa-radiation fa-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 rounded-3 border-start border-primary border-4 bg-light d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="small fw-bold text-muted text-uppercase">À Prendre en Charge</span>
+                                <h3 class="fw-bold mb-0 text-primary" th:text="${incidentStats.nouveaux}">0</h3>
+                            </div>
+                            <div class="p-2 bg-primary-subtle text-primary rounded-circle">
+                                <i class="fas fa-inbox fa-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 rounded-3 border-start border-warning border-4 bg-light d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="small fw-bold text-muted text-uppercase">En Diagnostic</span>
+                                <h3 class="fw-bold mb-0 text-warning" th:text="${incidentStats.enCours}">0</h3>
+                            </div>
+                            <div class="p-2 bg-warning-subtle text-warning rounded-circle">
+                                <i class="fas fa-tools fa-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 rounded-3 border-start border-success border-4 bg-light d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="small fw-bold text-muted text-uppercase">Résolus</span>
+                                <h3 class="fw-bold mb-0 text-success" th:text="${incidentStats.resolus}">0</h3>
+                            </div>
+                            <div class="p-2 bg-success-subtle text-success rounded-circle">
+                                <i class="fas fa-check-circle fa-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table des 5 derniers incidents & Graphiques de répartition -->
+                <div class="row g-4">
+                    <div class="col-lg-7">
+                        <div class="border rounded-3 p-3 bg-light bg-opacity-25 h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold text-dark mb-0"><i class="fas fa-clock text-primary me-2"></i>Derniers Incidents Signalés</h6>
+                                <a th:href="@{/tickets}" class="small text-primary text-decoration-none fw-semibold">Voir tout</a>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover align-middle mb-0 bg-white rounded-3 shadow-none">
+                                    <thead class="bg-light">
+                                        <tr class="small text-muted text-uppercase">
+                                            <th>Réf</th>
+                                            <th>Banque</th>
+                                            <th>Sujet</th>
+                                            <th>Urgence</th>
+                                            <th>Statut</th>
+                                            <th class="text-center">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="it : ${incidentStats.recentTickets}">
+                                            <td class="fw-bold font-monospace small text-primary" th:text="${it.ticketNumber}">INC-001</td>
+                                            <td class="small fw-semibold" th:text="${it.client.name}">Banque</td>
+                                            <td class="small text-truncate" style="max-width: 140px;" th:text="${it.title}">Sujet</td>
+                                            <td>
+                                                <span th:if="${it.urgency == 'BLOQUANTE'}" class="badge bg-danger" style="font-size: 0.65rem;">Bloquante</span>
+                                                <span th:if="${it.urgency == 'URGENTE'}" class="badge bg-warning text-dark" style="font-size: 0.65rem;">Urgente</span>
+                                                <span th:if="${it.urgency == 'NORMALE'}" class="badge bg-info text-dark" style="font-size: 0.65rem;">Normale</span>
+                                                <span th:if="${it.urgency == 'FAIBLE'}" class="badge bg-secondary" style="font-size: 0.65rem;">Faible</span>
+                                            </td>
+                                            <td>
+                                                <span th:if="${it.status == 'NOUVEAU'}" class="badge bg-primary-subtle text-primary" style="font-size: 0.65rem;">Nouveau</span>
+                                                <span th:if="${it.status == 'EN_COURS'}" class="badge bg-warning-subtle text-warning" style="font-size: 0.65rem;">En cours</span>
+                                                <span th:if="${it.status == 'EN_ATTENTE'}" class="badge bg-secondary-subtle text-secondary" style="font-size: 0.65rem;">En attente</span>
+                                                <span th:if="${it.status == 'RESOLU'}" class="badge bg-success-subtle text-success" style="font-size: 0.65rem;">Résolu</span>
+                                                <span th:if="${it.status == 'CLOS'}" class="badge bg-dark-subtle text-dark" style="font-size: 0.65rem;">Clos</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <a th:href="@{/tickets/process/{id}(id=${it.id})}" class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size: 0.75rem;" title="Traiter">
+                                                    Traiter
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${#lists.isEmpty(incidentStats.recentTickets)}">
+                                            <td colspan="6" class="text-center py-3 text-muted small">
+                                                Aucun incident signalé pour le moment.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-5">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="border rounded-3 p-3 bg-light bg-opacity-25">
+                                    <h6 class="fw-bold text-dark small mb-2"><i class="fas fa-university text-primary me-2"></i>Incidents par Banque</h6>
+                                    <div style="height: 140px;">
+                                        <canvas id="incidentByClientChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="border rounded-3 p-3 bg-light bg-opacity-25">
+                                    <h6 class="fw-bold text-dark small mb-2"><i class="fas fa-cubes text-primary me-2"></i>Incidents par Application / Module</h6>
+                                    <div style="height: 140px;">
+                                        <canvas id="incidentByAppChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -343,6 +482,62 @@
             new Chart(document.getElementById('intervenerChart'), { type: 'bar', data: { labels: topI.map(i=>i[0]), datasets: [{ label: 'Jours', data: topI.map(i=>i[1]), backgroundColor: COLORS.secondary }] }, options: { indexAxis: 'y', plugins: { legend: { display: false } } } });
             const topC = [...clientsMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5);
             new Chart(document.getElementById('clientChart'), { type: 'bar', data: { labels: topC.map(c=>c[0]), datasets: [{ label: 'Jours', data: topC.map(c=>c[1]), backgroundColor: COLORS.primary }] }, options: { indexAxis: 'y', plugins: { legend: { display: false } } } });
+
+            // F. Incidents Clients Charts
+            const incidentByClient = /*[[${incidentStats.byClient}]]*/ {};
+            const clientNames = Object.keys(incidentByClient);
+            const clientCounts = Object.values(incidentByClient);
+
+            const ctxIncidentClient = document.getElementById('incidentByClientChart');
+            if (ctxIncidentClient) {
+                new Chart(ctxIncidentClient, {
+                    type: 'bar',
+                    data: {
+                        labels: clientNames.length ? clientNames : ['Aucun incident'],
+                        datasets: [{
+                            label: 'Incidents',
+                            data: clientCounts.length ? clientCounts : [0],
+                            backgroundColor: COLORS.secondary,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: { legend: { display: false } },
+                        scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+                    }
+                });
+            }
+
+            const incidentByApp = /*[[${incidentStats.byApp}]]*/ {};
+            const appNames = Object.keys(incidentByApp);
+            const appCounts = Object.values(incidentByApp);
+
+            const ctxIncidentApp = document.getElementById('incidentByAppChart');
+            if (ctxIncidentApp) {
+                new Chart(ctxIncidentApp, {
+                    type: 'doughnut',
+                    data: {
+                        labels: appNames.length ? appNames : ['Aucun incident'],
+                        datasets: [{
+                            data: appCounts.length ? appCounts : [1],
+                            backgroundColor: [COLORS.primary, COLORS.secondary, COLORS.warning, COLORS.danger, COLORS.info, COLORS.success, COLORS.dark],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: { boxWidth: 10, font: { size: 9 } }
+                            }
+                        },
+                        cutout: '60%'
+                    }
+                });
+            }
 
             setTimeout(() => { const content = document.getElementById('dashboard-content'); if(content) content.style.opacity = '1'; }, 100);
         });

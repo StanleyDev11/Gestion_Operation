@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Calendrier des Missions')}"></head>
+<!-- FullCalendar CSS -->
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+<style>
+    .fc-event { cursor: pointer; border: none; padding: 2px 5px; }
+    .fc-toolbar-title { font-size: 1.25rem !important; font-weight: bold; text-transform: uppercase; color: var(--ace-dark); }
+    .fc-button-primary { background-color: var(--ace-primary) !important; border-color: var(--ace-primary) !important; }
+    .fc-button-primary:hover { background-color: #d46616 !important; }
+    .fc-daygrid-event-dot { border-color: var(--ace-primary) !important; }
+    .calendar-container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); }
+</style>
+<body>
+
+    <div th:replace="~{layout :: sidebar('calendar')}"></div>
+    <div th:replace="~{layout :: header('Planification des Missions')}"></div>
+
+    <main class="main-content">
+        <div class="container-fluid">
+            <div class="calendar-container">
+                <div id='calendar'></div>
+            </div>
+        </div>
+    </main>
+
+    <div th:replace="~{layout :: scripts}"></div>
+    <!-- FullCalendar JS -->
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/fr.js'></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'fr',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,listMonth'
+                },
+                themeSystem: 'bootstrap5',
+                events: '/api/missions/events',
+                eventClick: function(info) {
+                    if (info.event.url) {
+                        window.location.href = info.event.url;
+                        info.jsEvent.preventDefault();
+                    }
+                },
+                eventDidMount: function(info) {
+                    // Tooltip simple
+                    const expert = info.event.extendedProps.expert || 'N/A';
+                    const status = info.event.extendedProps.status || 'N/A';
+                    info.el.title = `Expert: ${expert}\nStatut: ${status}`;
+                }
+            });
+            calendar.render();
+        });
+    </script>
+</body>
+</html>

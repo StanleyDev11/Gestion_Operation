@@ -3,9 +3,11 @@ package com.ace3i.connect.controller;
 import com.ace3i.connect.entity.AppConfig;
 import com.ace3i.connect.entity.Client;
 import com.ace3i.connect.entity.Intervener;
+import com.ace3i.connect.entity.TicketCategory;
 import com.ace3i.connect.repository.AppConfigRepository;
 import com.ace3i.connect.repository.ClientRepository;
 import com.ace3i.connect.repository.IntervenerRepository;
+import com.ace3i.connect.repository.TicketCategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -29,6 +31,9 @@ public class SettingsController {
 
     @Autowired
     private IntervenerRepository intervenerRepository;
+
+    @Autowired
+    private TicketCategoryRepository ticketCategoryRepository;
 
     @GetMapping
     public String index() {
@@ -118,6 +123,16 @@ public class SettingsController {
         return "redirect:/settings/banks";
     }
 
+    @PostMapping("/clients/update-branch")
+    public String updateClientBranch(@RequestParam Long clientId, @RequestParam(required = false) String gitBranch, RedirectAttributes redirectAttributes) {
+        clientRepository.findById(clientId).ifPresent(client -> {
+            client.setGitBranch(gitBranch != null && !gitBranch.isBlank() ? gitBranch.trim() : null);
+            clientRepository.save(client);
+            redirectAttributes.addFlashAttribute("success", "Branche Git mise à jour pour " + client.getName() + " !");
+        });
+        return "redirect:/settings/banks";
+    }
+
     @PostMapping("/clients/delete/{id}")
     public String deleteClient(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         clientRepository.deleteById(id);
@@ -153,5 +168,58 @@ public class SettingsController {
     @GetMapping("/interveners/delete-get/{id}")
     public String deleteIntervenerGet(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         return deleteIntervener(id, redirectAttributes);
+    }
+
+    // =====================================================================
+    // GESTION DES CATEGORIES / MODULES DE TICKETS
+    // =====================================================================
+
+    @GetMapping("/ticket-categories")
+    public String showTicketCategories(Model model) {
+        model.addAttribute("categories", ticketCategoryRepository.findAllByOrderByDisplayOrderAscNameAsc());
+        model.addAttribute("newCategory", new TicketCategory());
+        return "settings-ticket-categories";
+    }
+
+    @PostMapping("/ticket-categories/add")
+    public String addTicketCategory(@ModelAttribute TicketCategory category, RedirectAttributes redirectAttributes) {
+        if (category.getName() == null || category.getName().trim().isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "Le nom de la catégorie est obligatoire.");
+            return "redirect:/settings/ticket-categories";
+        }
+        if (ticketCategoryRepository.existsByName(category.getName().trim())) {
+            redirectAttributes.addFlashAttribute("error", "Une catégorie avec ce nom existe déjà.");
+            return "redirect:/settings/ticket-categories";
+        }
+        category.setName(category.getName().trim());
+        category.setActive(true);
+        ticketCategoryRepository.save(category);
+        redirectAttributes.addFlashAttribute("success", "Catégorie \"" + category.getName() + "\" ajoutée avec succès !");
+        return "redirect:/settings/ticket-categories";
+    }
+
+    @PostMapping("/ticket-categories/toggle/{id}")
+    public String toggleTicketCategory(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        ticketCategoryRepository.findById(id).ifPresent(cat -> {
+            cat.setActive(!cat.isActive());
+            ticketCategoryRepository.save(cat);
+            redirectAttributes.addFlashAttribute("success",
+                    "Catégorie \"" + cat.getName() + "\" " + (cat.isActive() ? "activée" : "désactivée") + ".");
+        });
+        return "redirect:/settings/ticket-categories";
+    }
+
+    @PostMapping("/ticket-categories/delete/{id}")
+    public String deleteTicketCategory(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        ticketCategoryRepository.findById(id).ifPresent(cat -> {
+            redirectAttributes.addFlashAttribute("success", "Catégorie \"" + cat.getName() + "\" supprimée.");
+            ticketCategoryRepository.deleteById(id);
+        });
+        return "redirect:/settings/ticket-categories";
+    }
+
+    @GetMapping("/ticket-categories/delete-get/{id}")
+    public String deleteTicketCategoryGet(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        return deleteTicketCategory(id, redirectAttributes);
     }
 }
