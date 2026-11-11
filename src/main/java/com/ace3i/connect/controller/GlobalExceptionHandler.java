@@ -12,6 +12,11 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public org.springframework.http.ResponseEntity<Void> handleNoResourceFound(org.springframework.web.servlet.resource.NoResourceFoundException ex) {
+        return org.springframework.http.ResponseEntity.notFound().build();
+    }
+
     @ExceptionHandler(Exception.class)
     public String handleException(Exception ex, Model model) {
         log.error("Une erreur non gérée est survenue : {}", ex.getMessage(), ex);

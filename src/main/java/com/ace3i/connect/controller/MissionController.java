@@ -411,9 +411,14 @@ public class MissionController {
     }
 
     @GetMapping("/missions/report")
-    public ResponseEntity<byte[]> getPeriodicReport(@RequestParam String clientName,
-                                                   @RequestParam String startDate,
-                                                   @RequestParam String endDate) {
+    public Object getPeriodicReport(@RequestParam(required = false) String clientName,
+                                   @RequestParam(required = false) String startDate,
+                                   @RequestParam(required = false) String endDate,
+                                   Model model) {
+        if (clientName == null || clientName.isBlank() || startDate == null || startDate.isBlank() || endDate == null || endDate.isBlank()) {
+            model.addAttribute("clients", clientRepository.findAll());
+            return "report-form";
+        }
         try {
             java.time.LocalDateTime start = java.time.LocalDate.parse(startDate).atStartOfDay();
             java.time.LocalDateTime end = java.time.LocalDate.parse(endDate).atTime(23, 59, 59);
